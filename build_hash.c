@@ -1,1 +1,0 @@
-const char *const build_hash = "{BUILD_HASH}";
