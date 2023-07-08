@@ -1,6 +1,6 @@
 build: clean
-	mkdir build
+	mkdir -p build
 	emcc *.c -o build/index.html
 
 clean:
-	rm -rf build
+	rm -rf build/*
