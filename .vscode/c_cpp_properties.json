@@ -1,0 +1,13 @@
+{
+    "configurations": [
+        {
+            "name": "Linux-emcc",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [],
+            "compilerPath": "/emsdk/upstream/emscripten/emcc"
+        }
+    ],
+    "version": 4
+}
