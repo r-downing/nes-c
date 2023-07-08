@@ -12,12 +12,9 @@ jobs:
       - name: Checkout 🛎️
         uses: actions/checkout@v3
 
-      - name: mkdir build
-        run: mkdir build
-        
       - name: Build
         # Build your program with the given configuration
-        run: emcc *.c -o build/index.html
+        run: make
         
       - name: Install rsync 📚
         # needed for deploy action
