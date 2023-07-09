@@ -8,4 +8,4 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -DTEST_DEFINE")
 set(SOURCE_FILES main.c x.c)
 
 # Add executable target with source files listed in SOURCE_FILES variable
-add_executable(main.js ${SOURCE_FILES})
+add_executable(index.html ${SOURCE_FILES})
