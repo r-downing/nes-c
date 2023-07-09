@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.13)  # CMake version check
 set(CMAKE_C_COMPILER "emcc")
 set(CMAKE_CXX_COMPILER "emcc")
 project(simple_example)               # Create project "simple_example"
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "output")
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -DTEST_DEFINE")
 
 # Add main.cpp file of project root directory as source file
