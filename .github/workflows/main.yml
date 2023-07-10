@@ -33,6 +33,8 @@ jobs:
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Setup Libs
         run: cd lib && chmod +x setup.sh && ./setup.sh
