@@ -6,8 +6,9 @@ set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "output")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -DTEST_DEFINE")
 
-# Add main.cpp file of project root directory as source file
 set(SOURCE_FILES main.c x.c)
 
 # Add executable target with source files listed in SOURCE_FILES variable
 add_executable(index.html ${SOURCE_FILES})
+
+add_subdirectory(tests)
