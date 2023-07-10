@@ -17,4 +17,3 @@ set_property(TARGET imp_cpputest PROPERTY
 
 add_executable(tests tests.cpp)
 target_link_libraries(tests imp_cpputest)
-target_compile_options(tests PUBLIC -sNO_DISABLE_EXCEPTION_CATCHING)
