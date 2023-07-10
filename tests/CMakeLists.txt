@@ -15,6 +15,6 @@ add_library(imp_cpputest STATIC IMPORTED)
 set_property(TARGET imp_cpputest PROPERTY
              IMPORTED_LOCATION ${CPPUTEST_DIR}/src/CppUTest/libCppUTest.a)
 
-add_executable(tests.js tests.cpp)
-target_link_libraries(tests.js imp_cpputest)
-target_compile_options(tests.js PUBLIC -sNO_DISABLE_EXCEPTION_CATCHING)
+add_executable(tests tests.cpp)
+target_link_libraries(tests imp_cpputest)
+target_compile_options(tests PUBLIC -sNO_DISABLE_EXCEPTION_CATCHING)

@@ -2,5 +2,10 @@
     "files.associations": {
         "*.h": "c",
         "*.c": "c"
+    },
+    "cmake.configureSettings": {
+        // ToDo: figure out how to use emcmake cmake
+        "CMAKE_TOOLCHAIN_FILE": "/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+        "CMAKE_CROSSCOMPILING_EMULATOR": "/emsdk/node/16.20.0_64bit/bin/node"
     }
 }
