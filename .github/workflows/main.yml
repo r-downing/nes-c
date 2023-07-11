@@ -14,7 +14,7 @@ jobs:
 
       - name: Build
         # Build your program with the given configuration
-        run: mkdir -p build && cd build && emcmake cmake .. && make index.html
+        run: mkdir -p build && cd build && emcmake cmake .. && make index
         
       - name: Install rsync 📚
         # needed for deploy action
