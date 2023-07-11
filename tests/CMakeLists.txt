@@ -8,6 +8,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -DTEST_DEFINE -sNO_DISABLE_EXC
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -sNO_DISABLE_EXCEPTION_CATCHING")
 set(CPPUTEST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../lib/cpputest")
 
+set(CMAKE_EXECUTABLE_SUFFIX ".js")
+
 include_directories(${CPPUTEST_DIR}/include)
 
 # add cpputest library

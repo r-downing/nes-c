@@ -12,8 +12,10 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -DTEST_DEFINE")
 
 add_library(xlib STATIC src/x.c)
 
+set(CMAKE_EXECUTABLE_SUFFIX ".html")
+
 # Add executable target with source files listed in SOURCE_FILES variable
-add_executable(index.html src/main.c)
-target_link_libraries(index.html xlib)
+add_executable(index src/main.c)
+target_link_libraries(index xlib)
 
 add_subdirectory(tests)
