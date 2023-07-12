@@ -15,7 +15,7 @@ include_directories(${CPPUTEST_DIR}/include)
 # add cpputest library
 add_library(imp_cpputest STATIC IMPORTED)
 set_property(TARGET imp_cpputest PROPERTY
-             IMPORTED_LOCATION ${CPPUTEST_DIR}/src/CppUTest/libCppUTest.a)
+             IMPORTED_LOCATION ${CPPUTEST_DIR}/cpputest_build/src/CppUTest/libCppUTest.a)
 
 add_executable(tests tests.cpp)
 target_link_libraries(tests imp_cpputest)

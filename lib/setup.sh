@@ -1,5 +1,6 @@
 #!/bin/bash
 
-cd cpputest
-emcmake cmake .
+mkdir -p cpputest/cpputest_build
+cd cpputest/cpputest_build
+emcmake cmake ..
 emmake make
