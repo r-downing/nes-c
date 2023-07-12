@@ -11,6 +11,13 @@
 				"$gcc"
 			],
 			"detail": "CMake template build task"
+		},
+		{
+			"label": "serve",
+			"type": "process",
+			"command": "python3",
+			"args": ["-m", "http.server", "-d", "build/output"],
+			"problemMatcher": []
 		}
 	]
 }
