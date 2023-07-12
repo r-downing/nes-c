@@ -8,13 +8,12 @@ else()
     message( FATAL_ERROR "Must run with emcmake" )
 endif()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -DTEST_DEFINE")
+add_compile_options(-Wall -Wextra -DTEST_DEFINE)
 
 add_library(xlib STATIC src/x.c)
 
 set(CMAKE_EXECUTABLE_SUFFIX ".html")
 
-# Add executable target with source files listed in SOURCE_FILES variable
 add_executable(index src/main.c)
 target_link_libraries(index xlib)
 
