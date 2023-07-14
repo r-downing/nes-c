@@ -8,7 +8,6 @@ set(CPPUTEST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../lib/cpputest")
 
 add_link_options(-sNO_DISABLE_EXCEPTION_CATCHING)
 
-set(CMAKE_EXECUTABLE_SUFFIX ".js")
 
 include_directories(${CPPUTEST_DIR}/include)
 
@@ -21,5 +20,6 @@ add_library(imp_cpputest_ext STATIC IMPORTED)
 set_property(TARGET imp_cpputest_ext PROPERTY
             IMPORTED_LOCATION ${CPPUTEST_DIR}/cpputest_build/src/CppUTestExt/libCppUTestExt.a)
 
+set(CMAKE_EXECUTABLE_SUFFIX ".js")
 add_executable(tests tests.cpp)
 target_link_libraries(tests imp_cpputest imp_cpputest_ext chip8)
