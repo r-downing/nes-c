@@ -12,11 +12,11 @@ endif()
 
 include_directories(inc)
 
-add_compile_options(-Wall -Wextra -DTEST_DEFINE)
+add_compile_options(-Wall -Wextra -DTEST_DEFINE -s USE_SDL=2)
+
 add_subdirectory(tests)
 
-
-add_link_options(-lm -s USE_SDL=2 --preload-file ../assets@assets)
+add_link_options(-s USE_SDL=2 --preload-file ../assets@assets)
 
 add_library(chip8 STATIC src/chip8.c src/chip8_font_set.c src/chip8_impl.c)
 
