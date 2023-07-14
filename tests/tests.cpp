@@ -1,65 +1,51 @@
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
 
-extern "C"
-{
-#include "chip8.h"
-#include "../src/chip8_impl.h"
+extern "C" {
+#include <stdlib.h>
 #include <string.h>
 
-#include <stdlib.h>
+#include "../src/chip8_impl.h"
+#include "chip8.h"
 
-    // int chip8_impl_rand(void);
-    // uint32_t chip8_impl_ticks(void);
+// int chip8_impl_rand(void);
+// uint32_t chip8_impl_ticks(void);
 }
 
-int chip8_impl_rand(void)
-{
+int chip8_impl_rand(void) {
     mock().actualCall(__func__);
     return mock().returnIntValueOrDefault(0);
 }
 
-uint32_t chip8_impl_ticks(void)
-{
+uint32_t chip8_impl_ticks(void) {
     mock().actualCall(__func__);
     return mock().returnUnsignedIntValueOrDefault(0);
 }
 
-TEST_GROUP(Chip8TestGroup)
-{
+TEST_GROUP(Chip8TestGroup) {
     Chip8 c;
     Chip8 c2;
 
-    TEST_SETUP()
-    {
+    TEST_SETUP() {
         // memset(&c, 0, sizeof(c));
         chip8_reset(&c);
-
     }
 
-    TEST_TEARDOWN()
-    {
+    TEST_TEARDOWN() {
         mock().checkExpectations();
         mock().clear();
     }
 
-    void step_chip8(const CHIP8_ERROR expected)
-    {
-        c2 = c; // make a snapshot of c before stepping
-        c2.pc += 2; // and increment pc as expected
+    void step_chip8(const CHIP8_ERROR expected) {
+        c2 = c;      // make a snapshot of c before stepping
+        c2.pc += 2;  // and increment pc as expected
         const CHIP8_ERROR err = chip8_cycle(&c);
         CHECK_EQUAL(expected, err);
     }
-    void step_chip8(void)
-    {
-        step_chip8(CHIP8_ERROR_NONE);
-    }
-
+    void step_chip8(void) { step_chip8(CHIP8_ERROR_NONE); }
 };
 
-
-TEST(Chip8TestGroup, test_chip8_reset)
-{
+TEST(Chip8TestGroup, test_chip8_reset) {
     chip8_reset(&c);
 
     CHECK_EQUAL(0x200, c.pc);
@@ -69,10 +55,11 @@ TEST(Chip8TestGroup, test_chip8_reset)
 }
 
 // test load instructions
-TEST(Chip8TestGroup, test_load_instr)
-{
+TEST(Chip8TestGroup, test_load_instr) {
     const uint16_t instr[(0x1000 - 0x200) / 2] = {0x1234, 0x5678};
-    CHECK_EQUAL(CHIP8_ERROR_NONE, chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0]))));
+    CHECK_EQUAL(
+        CHIP8_ERROR_NONE,
+        chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0]))));
     CHECK_EQUAL(0x12, c.mem[0x200]);
     CHECK_EQUAL(0x34, c.mem[0x201]);
     CHECK_EQUAL(0x56, c.mem[0x202]);
@@ -80,15 +67,15 @@ TEST(Chip8TestGroup, test_load_instr)
 }
 
 // test load instructions too big
-TEST(Chip8TestGroup, test_load_instr_fail)
-{
+TEST(Chip8TestGroup, test_load_instr_fail) {
     const uint16_t instr[((0x1000 - 0x200) / 2) + 1] = {0};
-    CHECK_EQUAL(CHIP8_ERROR_INVALID_ROM_SIZE, chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0]))));
+    CHECK_EQUAL(
+        CHIP8_ERROR_INVALID_ROM_SIZE,
+        chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0]))));
 }
 
 // clear screen
-TEST(Chip8TestGroup, test_00E0)
-{
+TEST(Chip8TestGroup, test_00E0) {
     const uint16_t instr[] = {0x00E0};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.video[3][5] = 1;
@@ -99,8 +86,7 @@ TEST(Chip8TestGroup, test_00E0)
 }
 
 // return
-TEST(Chip8TestGroup, test_00EE_ok)
-{
+TEST(Chip8TestGroup, test_00EE_ok) {
     const uint16_t instr[] = {0x00EE};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.stack[c.sp++] = 0x300;
@@ -113,16 +99,14 @@ TEST(Chip8TestGroup, test_00EE_ok)
 }
 
 // return w/ empty stack
-TEST(Chip8TestGroup, test_00EE_error)
-{
+TEST(Chip8TestGroup, test_00EE_error) {
     const uint16_t instr[] = {0x00EE};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     step_chip8(CHIP8_ERROR_STACK_UNDERFLOW);
 }
 
 // goto
-TEST(Chip8TestGroup, test_1NNN)
-{
+TEST(Chip8TestGroup, test_1NNN) {
     const uint16_t instr[] = {0x1234};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     step_chip8();
@@ -132,13 +116,12 @@ TEST(Chip8TestGroup, test_1NNN)
 }
 
 // call
-TEST(Chip8TestGroup, test_2NNN)
-{
+TEST(Chip8TestGroup, test_2NNN) {
     const uint16_t instr[] = {0x2234};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     step_chip8();
     CHECK_EQUAL(0x234, c.pc);
-    CHECK_EQUAL(1, c.sp); // should add to stack
+    CHECK_EQUAL(1, c.sp);  // should add to stack
     CHECK_EQUAL(0x202, c.stack[0]);
     c2.pc = 0x234;
     c2.sp = 1;
@@ -147,8 +130,7 @@ TEST(Chip8TestGroup, test_2NNN)
 }
 
 // call stack overflow
-TEST(Chip8TestGroup, test_2NNN_error)
-{
+TEST(Chip8TestGroup, test_2NNN_error) {
     const uint16_t instr[] = {0x2234};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.sp = 16;
@@ -156,8 +138,7 @@ TEST(Chip8TestGroup, test_2NNN_error)
 }
 
 // skip if Vx == NN, true
-TEST(Chip8TestGroup, test_3XNN_true)
-{
+TEST(Chip8TestGroup, test_3XNN_true) {
     const uint16_t instr[] = {0x3712};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[7] = 0x12;
@@ -168,8 +149,7 @@ TEST(Chip8TestGroup, test_3XNN_true)
 }
 
 // skip if Vx == NN, false
-TEST(Chip8TestGroup, test_3XNN_false)
-{
+TEST(Chip8TestGroup, test_3XNN_false) {
     const uint16_t instr[] = {0x3712};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[7] = 0x14;
@@ -180,8 +160,7 @@ TEST(Chip8TestGroup, test_3XNN_false)
 }
 
 // skip if Vx != NN, true
-TEST(Chip8TestGroup, test_4XNN_true)
-{
+TEST(Chip8TestGroup, test_4XNN_true) {
     const uint16_t instr[] = {0x4712};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[7] = 0x14;
@@ -192,8 +171,7 @@ TEST(Chip8TestGroup, test_4XNN_true)
 }
 
 // skip if Vx != NN, false
-TEST(Chip8TestGroup, test_4XNN_false)
-{
+TEST(Chip8TestGroup, test_4XNN_false) {
     const uint16_t instr[] = {0x4712};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[7] = 0x12;
@@ -204,8 +182,7 @@ TEST(Chip8TestGroup, test_4XNN_false)
 }
 
 // skip if Vx == Vy, true
-TEST(Chip8TestGroup, test_5XY0_true)
-{
+TEST(Chip8TestGroup, test_5XY0_true) {
     const uint16_t instr[] = {0x5790};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[7] = 0x12;
@@ -217,8 +194,7 @@ TEST(Chip8TestGroup, test_5XY0_true)
 }
 
 // skip if Vx == Vy, false
-TEST(Chip8TestGroup, test_5XY0_false)
-{
+TEST(Chip8TestGroup, test_5XY0_false) {
     const uint16_t instr[] = {0x5790};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[7] = 0x14;
@@ -230,10 +206,8 @@ TEST(Chip8TestGroup, test_5XY0_false)
 }
 
 // 5XYR, R 1-F undefined
-TEST(Chip8TestGroup, test_5XYR)
-{
-    for (uint16_t i = 0x5791; i <= 0x579F; i++)
-    {
+TEST(Chip8TestGroup, test_5XYR) {
+    for (uint16_t i = 0x5791; i <= 0x579F; i++) {
         chip8_reset(&c);
         const uint16_t instr[] = {i};
         chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
@@ -242,8 +216,7 @@ TEST(Chip8TestGroup, test_5XYR)
 }
 
 // 6XNN, set Vx to NN
-TEST(Chip8TestGroup, test_6XNN)
-{
+TEST(Chip8TestGroup, test_6XNN) {
     const uint16_t instr[] = {0x6581};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     CHECK_EQUAL(0x00, c.v[5]);
@@ -254,8 +227,7 @@ TEST(Chip8TestGroup, test_6XNN)
 }
 
 // 7XNN, Vx += NN, no carry
-TEST(Chip8TestGroup, test_7XNN)
-{
+TEST(Chip8TestGroup, test_7XNN) {
     const uint16_t instr[] = {0x7986};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[9] = 0x85;
@@ -268,8 +240,7 @@ TEST(Chip8TestGroup, test_7XNN)
 }
 
 // 8XY0, Vx = Vy
-TEST(Chip8TestGroup, test_8XY0)
-{
+TEST(Chip8TestGroup, test_8XY0) {
     const uint16_t instr[] = {0x8520};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[2] = 0x85;
@@ -280,8 +251,7 @@ TEST(Chip8TestGroup, test_8XY0)
 }
 
 // 8XY1, Vx |= Vy
-TEST(Chip8TestGroup, test_8XY1)
-{
+TEST(Chip8TestGroup, test_8XY1) {
     const uint16_t instr[] = {0x8521};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[2] = 0x10;
@@ -293,8 +263,7 @@ TEST(Chip8TestGroup, test_8XY1)
 }
 
 // 8XY2, Vx &= Vy
-TEST(Chip8TestGroup, test_8XY2)
-{
+TEST(Chip8TestGroup, test_8XY2) {
     const uint16_t instr[] = {0x8522};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[2] = 0x13;
@@ -306,8 +275,7 @@ TEST(Chip8TestGroup, test_8XY2)
 }
 
 // 8XY3, Vx ^= Vy
-TEST(Chip8TestGroup, test_8XY3)
-{
+TEST(Chip8TestGroup, test_8XY3) {
     const uint16_t instr[] = {0x8523};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[2] = 0x13;
@@ -319,8 +287,7 @@ TEST(Chip8TestGroup, test_8XY3)
 }
 
 // 8XY4, Vx += Vy, VF = 1 if carry
-TEST(Chip8TestGroup, test_8XY4)
-{
+TEST(Chip8TestGroup, test_8XY4) {
     const uint16_t instr[] = {0x8524, 0x8524};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[2] = 0x71;
@@ -341,8 +308,7 @@ TEST(Chip8TestGroup, test_8XY4)
 }
 
 // 8XY5, Vx -= Vy, VF = 1 if no borrow
-TEST(Chip8TestGroup, test_8XY5)
-{
+TEST(Chip8TestGroup, test_8XY5) {
     const uint16_t instr[] = {0x8525, 0x8525};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[2] = 0x42;
@@ -363,8 +329,7 @@ TEST(Chip8TestGroup, test_8XY5)
 }
 
 // 8XY6, Vx >>= 1, VF = LSB
-TEST(Chip8TestGroup, test_8XY6)
-{
+TEST(Chip8TestGroup, test_8XY6) {
     const uint16_t instr[] = {0x8316, 0x8316};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[0xF] = 1;
@@ -384,8 +349,7 @@ TEST(Chip8TestGroup, test_8XY6)
 }
 
 // 8XY7, Vx = Vy - Vx, VF 1 if no borrow
-TEST(Chip8TestGroup, test_8XY7)
-{
+TEST(Chip8TestGroup, test_8XY7) {
     const uint16_t instr[] = {0x8527, 0x8587};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[2] = 0x42;
@@ -406,8 +370,7 @@ TEST(Chip8TestGroup, test_8XY7)
 }
 
 // 8XYE, Vx <<= 1, VF = MSB
-TEST(Chip8TestGroup, test_8XYE)
-{
+TEST(Chip8TestGroup, test_8XYE) {
     const uint16_t instr[] = {0x831E, 0x831E};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[0xF] = 1;
@@ -421,8 +384,7 @@ TEST(Chip8TestGroup, test_8XYE)
 }
 
 // 8XYR, R [8-D, F] - invalid
-TEST(Chip8TestGroup, test_8XYR)
-{
+TEST(Chip8TestGroup, test_8XYR) {
     for (uint16_t i = 0x8008; i <= 0x800D; i++) {
         chip8_reset(&c);
         const uint16_t instr[] = {i};
@@ -432,8 +394,7 @@ TEST(Chip8TestGroup, test_8XYR)
 }
 
 // skip if Vx != Vy, true
-TEST(Chip8TestGroup, test_9XY0_true)
-{
+TEST(Chip8TestGroup, test_9XY0_true) {
     const uint16_t instr[] = {0x9790};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[7] = 0x13;
@@ -443,8 +404,7 @@ TEST(Chip8TestGroup, test_9XY0_true)
 }
 
 // skip if Vx != Vy, false
-TEST(Chip8TestGroup, test_9XY0_false)
-{
+TEST(Chip8TestGroup, test_9XY0_false) {
     const uint16_t instr[] = {0x9790};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[7] = 0x12;
@@ -454,10 +414,8 @@ TEST(Chip8TestGroup, test_9XY0_false)
 }
 
 // 9XYR, R 1-F undefined
-TEST(Chip8TestGroup, test_9XYR)
-{
-    for (uint16_t i = 0x9791; i <= 0x979F; i++)
-    {
+TEST(Chip8TestGroup, test_9XYR) {
+    for (uint16_t i = 0x9791; i <= 0x979F; i++) {
         chip8_reset(&c);
         const uint16_t instr[] = {i};
         chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
@@ -466,8 +424,7 @@ TEST(Chip8TestGroup, test_9XYR)
 }
 
 // ANNN, I = NNN
-TEST(Chip8TestGroup, test_ANNN)
-{
+TEST(Chip8TestGroup, test_ANNN) {
     const uint16_t instr[] = {0xA790};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     step_chip8();
@@ -475,8 +432,7 @@ TEST(Chip8TestGroup, test_ANNN)
 }
 
 // PC = V0 + NNN
-TEST(Chip8TestGroup, test_BNNN)
-{
+TEST(Chip8TestGroup, test_BNNN) {
     const uint16_t instr[] = {0xB750};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[0] = 0x46;
@@ -485,8 +441,7 @@ TEST(Chip8TestGroup, test_BNNN)
 }
 
 // Vx = rand() & NN
-TEST(Chip8TestGroup, test_CXNN)
-{
+TEST(Chip8TestGroup, test_CXNN) {
     const uint16_t instr[] = {0xC30E};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     mock().expectOneCall("chip8_impl_rand").andReturnValue(0x1C);
@@ -495,8 +450,7 @@ TEST(Chip8TestGroup, test_CXNN)
 }
 
 // draw 8xN sprite at Vx, Vy, VF = 1 if collision
-TEST(Chip8TestGroup, test_DXYN)
-{
+TEST(Chip8TestGroup, test_DXYN) {
     const uint16_t instr[] = {0xD572, 0xD571};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.i = 0x700;
@@ -527,8 +481,7 @@ TEST(Chip8TestGroup, test_DXYN)
 }
 
 // if key[Vx], skip next
-TEST(Chip8TestGroup, test_EX9E)
-{
+TEST(Chip8TestGroup, test_EX9E) {
     const uint16_t instr[] = {0xE39E, 0xE39E, 0x0000, 0xE59E};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[3] = 6;
@@ -542,8 +495,7 @@ TEST(Chip8TestGroup, test_EX9E)
 }
 
 // if not key[Vx], skip next
-TEST(Chip8TestGroup, test_EXA1)
-{
+TEST(Chip8TestGroup, test_EXA1) {
     const uint16_t instr[] = {0xE3A1, 0xE3A1, 0x0000, 0xE5A1};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[3] = 6;
@@ -557,17 +509,14 @@ TEST(Chip8TestGroup, test_EXA1)
     step_chip8(CHIP8_ERROR_INVALID_KEY_INDEX);
 }
 
-TEST(Chip8TestGroup, test_EXRR)
-{
+TEST(Chip8TestGroup, test_EXRR) {
     const uint16_t instr[] = {0xE3A2};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     step_chip8(CHIP8_ERROR_UNKNOWN_OPCODE);
 }
 
 // Vx = delay()
-TEST(Chip8TestGroup, test_FX07)
-{
-
+TEST(Chip8TestGroup, test_FX07) {
     const uint16_t instr[] = {0xFA07, 0xFA07};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
 
@@ -589,21 +538,19 @@ TEST(Chip8TestGroup, test_FX07)
 }
 
 // Vx = get_key(), blocking
-TEST(Chip8TestGroup, test_FX0A)
-{
+TEST(Chip8TestGroup, test_FX0A) {
     const uint16_t instr[] = {0xF20A};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     step_chip8();
-    CHECK_EQUAL(0x200 ,c.pc);
+    CHECK_EQUAL(0x200, c.pc);
     c.key[7] = 1;
     step_chip8();
-    CHECK_EQUAL(0x202 ,c.pc);
+    CHECK_EQUAL(0x202, c.pc);
     CHECK_EQUAL(7, c.v[2]);
 }
 
 // delay = Vx
-TEST(Chip8TestGroup, test_FX15)
-{
+TEST(Chip8TestGroup, test_FX15) {
     const uint16_t instr[] = {0xF915};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[9] = 0x50;
@@ -614,14 +561,12 @@ TEST(Chip8TestGroup, test_FX15)
 }
 
 // sound = Vx
-TEST(Chip8TestGroup, test_FX18)
-{
+TEST(Chip8TestGroup, test_FX18) {
     // CHECK_TRUE(0); // ToDo
 }
 
 // I += Vx
-TEST(Chip8TestGroup, test_FX1E)
-{
+TEST(Chip8TestGroup, test_FX1E) {
     const uint16_t instr[] = {0xF51E};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[5] = 0x46;
@@ -631,8 +576,7 @@ TEST(Chip8TestGroup, test_FX1E)
 }
 
 // I = font[Vx]
-TEST(Chip8TestGroup, test_FX29)
-{
+TEST(Chip8TestGroup, test_FX29) {
     const uint16_t instr[] = {0xFA29};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[0xA] = 0x6;
@@ -643,8 +587,7 @@ TEST(Chip8TestGroup, test_FX29)
 }
 
 // I[0:3] = BCD(Vx)
-TEST(Chip8TestGroup, test_FX33)
-{
+TEST(Chip8TestGroup, test_FX33) {
     const uint16_t instr[] = {0xFA33};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     c.v[0xA] = 139;
@@ -657,8 +600,7 @@ TEST(Chip8TestGroup, test_FX33)
 }
 
 // I[0:X] = V0:Vx, inclusive
-TEST(Chip8TestGroup, test_FX55)
-{
+TEST(Chip8TestGroup, test_FX55) {
     const uint16_t instr[] = {0xF455};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     const uint8_t data[] = {0x31, 0x52, 0x11, 0x25, 0x53};
@@ -671,8 +613,7 @@ TEST(Chip8TestGroup, test_FX55)
 }
 
 // V0:Vx = I[0:X]
-TEST(Chip8TestGroup, test_FX65)
-{
+TEST(Chip8TestGroup, test_FX65) {
     const uint16_t instr[] = {0xF465};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     const uint8_t data[] = {0x31, 0x52, 0x11, 0x25, 0x53};
@@ -686,8 +627,7 @@ TEST(Chip8TestGroup, test_FX65)
 }
 
 // undefined
-TEST(Chip8TestGroup, test_FXRR)
-{
+TEST(Chip8TestGroup, test_FXRR) {
     const uint16_t instr[] = {0xF366};
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     step_chip8(CHIP8_ERROR_UNKNOWN_OPCODE);
@@ -695,7 +635,4 @@ TEST(Chip8TestGroup, test_FXRR)
 
 #include "CppUTest/CommandLineTestRunner.h"
 
-int main(int argc, char **argv)
-{
-    return RUN_ALL_TESTS(argc, argv);
-}
+int main(int argc, char **argv) { return RUN_ALL_TESTS(argc, argv); }

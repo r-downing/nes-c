@@ -1,5 +1,5 @@
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 /** built-in 0-F hex char font sprites, 4x5 */
 const uint8_t FONT_SET[] = {
