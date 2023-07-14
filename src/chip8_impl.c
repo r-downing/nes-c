@@ -13,5 +13,5 @@ uint32_t chip8_impl_ticks(void)
 {
     struct timespec spec;
     clock_gettime(CLOCK_REALTIME, &spec);
-    return (spec.tv_sec * 60u) + ((spec.tv_nsec * 6) / 100000000);
+    return (spec.tv_sec * 60u) + (spec.tv_nsec / (1000000000ul / 60));
 }
