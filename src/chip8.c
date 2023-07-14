@@ -70,6 +70,7 @@ size_t chip8_load_file(Chip8 *const c, FILE *const f) {
                  sizeof(c->mem) - CHIP8_PROGRAM_START_ADDR, f);
 }
 
+/** 00E0 - clear display. 00EE - return */
 static CHIP8_ERROR op_handler_0(Chip8 *const c, const Chip8Opcode *const op) {
     if (0x00E0 == op->u16) {
         memset(c->video, 0, sizeof(c->video));
@@ -85,11 +86,13 @@ static CHIP8_ERROR op_handler_0(Chip8 *const c, const Chip8Opcode *const op) {
     return CHIP8_ERROR_UNKNOWN_OPCODE;
 }
 
+/** 1NNN - goto NNN */
 static CHIP8_ERROR op_handler_1(Chip8 *const c, const Chip8Opcode *const op) {
     c->pc = op->NNN;
     return CHIP8_ERROR_NONE;
 }
 
+/** 2NNN call NNN */
 static CHIP8_ERROR op_handler_2(Chip8 *const c, const Chip8Opcode *const op) {
     if (sizeof(c->stack) / sizeof(c->stack[0]) <= c->sp) {
         return CHIP8_ERROR_STACK_OVERFLOW;
@@ -100,6 +103,7 @@ static CHIP8_ERROR op_handler_2(Chip8 *const c, const Chip8Opcode *const op) {
     return CHIP8_ERROR_NONE;
 }
 
+/** 3XNN - if VX == NN, skip*/
 static CHIP8_ERROR op_handler_3(Chip8 *const c, const Chip8Opcode *const op) {
     if (c->v[op->X] == op->NN) {
         c->pc += sizeof(op->u16);
@@ -107,6 +111,7 @@ static CHIP8_ERROR op_handler_3(Chip8 *const c, const Chip8Opcode *const op) {
     return CHIP8_ERROR_NONE;
 }
 
+/** 4xNN if VX !+ NN, skip */
 static CHIP8_ERROR op_handler_4(Chip8 *const c, const Chip8Opcode *const op) {
     if (c->v[op->X] != op->NN) {
         c->pc += sizeof(op->u16);
@@ -114,6 +119,7 @@ static CHIP8_ERROR op_handler_4(Chip8 *const c, const Chip8Opcode *const op) {
     return CHIP8_ERROR_NONE;
 }
 
+/** 5XY0 - if VX == VY, skip */
 static CHIP8_ERROR op_handler_5(Chip8 *const c, const Chip8Opcode *const op) {
     if (op->N != 0) {
         return CHIP8_ERROR_UNKNOWN_OPCODE;
@@ -124,16 +130,19 @@ static CHIP8_ERROR op_handler_5(Chip8 *const c, const Chip8Opcode *const op) {
     return CHIP8_ERROR_NONE;
 }
 
+/** 6XNN VX = NN */
 static CHIP8_ERROR op_handler_6(Chip8 *const c, const Chip8Opcode *const op) {
     c->v[op->X] = op->NN;
     return CHIP8_ERROR_NONE;
 }
 
+/** 7XNN - VX += NN, no carry*/
 static CHIP8_ERROR op_handler_7(Chip8 *const c, const Chip8Opcode *const op) {
     c->v[op->X] += op->NN;
     return CHIP8_ERROR_NONE;
 }
 
+/** 8XYN - various math ops */
 static CHIP8_ERROR op_handler_8(Chip8 *const c, const Chip8Opcode *const op) {
     switch (op->N) {
         case 0: {
@@ -186,6 +195,7 @@ static CHIP8_ERROR op_handler_8(Chip8 *const c, const Chip8Opcode *const op) {
     }
 }
 
+/** 9XY0 - if VX != VY, skip*/
 static CHIP8_ERROR op_handler_9(Chip8 *const c, const Chip8Opcode *const op) {
     if (op->N != 0) {
         return CHIP8_ERROR_UNKNOWN_OPCODE;
@@ -196,21 +206,25 @@ static CHIP8_ERROR op_handler_9(Chip8 *const c, const Chip8Opcode *const op) {
     return CHIP8_ERROR_NONE;
 }
 
+/** ANNN - I = NNN*/
 static CHIP8_ERROR op_handler_A(Chip8 *const c, const Chip8Opcode *const op) {
     c->i = op->NNN;
     return CHIP8_ERROR_NONE;
 }
 
+/** BNNN - PC = V0 + NNN */
 static CHIP8_ERROR op_handler_B(Chip8 *const c, const Chip8Opcode *const op) {
     c->pc = c->v[0] + op->NNN;
     return CHIP8_ERROR_NONE;
 }
 
+/** CXNN - VX = rand() & NN */
 static CHIP8_ERROR op_handler_C(Chip8 *const c, const Chip8Opcode *const op) {
     c->v[op->X] = chip8_impl_rand() & op->NN;
     return CHIP8_ERROR_NONE;
 }
 
+/** DXYN - Draw sprite from I, 8xN at VX, VY */
 static CHIP8_ERROR op_handler_D(Chip8 *const c, const Chip8Opcode *const op) {
     c->v[0xF] = 0;
     for (size_t row = 0; row < op->N; row++) {
@@ -227,6 +241,7 @@ static CHIP8_ERROR op_handler_D(Chip8 *const c, const Chip8Opcode *const op) {
     return CHIP8_ERROR_NONE;
 }
 
+/** Key skips */
 static CHIP8_ERROR op_handler_E(Chip8 *const c, const Chip8Opcode *const op) {
     const uint8_t k = c->v[op->X];
     if (0x9E == op->NN) {
@@ -249,6 +264,7 @@ static CHIP8_ERROR op_handler_E(Chip8 *const c, const Chip8Opcode *const op) {
     return CHIP8_ERROR_NONE;
 }
 
+/** Delay, sound, BCD, reg dump and load */
 static CHIP8_ERROR op_handler_F(Chip8 *const c, const Chip8Opcode *const op) {
     switch (op->NN) {
         case 0x07: {

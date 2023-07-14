@@ -16,7 +16,12 @@
 			"label": "serve",
 			"type": "process",
 			"command": "python3",
-			"args": ["-m", "http.server", "-d", "build/output"],
+			"args": [
+				"-m",
+				"http.server",
+				"-d",
+				"build/output"
+			],
 			"problemMatcher": []
 		}
 	]
