@@ -17,5 +17,9 @@ add_library(imp_cpputest STATIC IMPORTED)
 set_property(TARGET imp_cpputest PROPERTY
              IMPORTED_LOCATION ${CPPUTEST_DIR}/cpputest_build/src/CppUTest/libCppUTest.a)
 
+add_library(imp_cpputest_ext STATIC IMPORTED)
+set_property(TARGET imp_cpputest_ext PROPERTY
+            IMPORTED_LOCATION ${CPPUTEST_DIR}/cpputest_build/src/CppUTestExt/libCppUTestExt.a)
+
 add_executable(tests tests.cpp)
-target_link_libraries(tests imp_cpputest)
+target_link_libraries(tests imp_cpputest imp_cpputest_ext chip8)
