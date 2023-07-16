@@ -1,11 +1,10 @@
 #include <SDL2/SDL.h>
+#include <chip8.h>
 #include <emscripten.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-
-#include "chip8.h"
 
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;

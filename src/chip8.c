@@ -1,5 +1,4 @@
-#include "chip8.h"
-
+#include <chip8.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>

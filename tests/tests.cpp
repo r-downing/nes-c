@@ -1,15 +1,12 @@
-#include "CppUTest/TestHarness.h"
-#include "CppUTestExt/MockSupport.h"
+#include <CppUTest/TestHarness.h>
+#include <CppUTestExt/MockSupport.h>
 
 extern "C" {
 #include <stdlib.h>
 #include <string.h>
 
 #include "../src/chip8_impl.h"
-#include "chip8.h"
-
-// int chip8_impl_rand(void);
-// uint32_t chip8_impl_ticks(void);
+#include <chip8.h>
 }
 
 int chip8_impl_rand(void) {
