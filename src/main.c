@@ -18,7 +18,7 @@ bool frozen = true;
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 320
 
-bool init(void) {
+static bool init(void) {
     chip8_reset(&c8);
 
     FILE *const rom_file = fopen("assets/tetris_reassembled.ch8", "rb");
@@ -49,7 +49,6 @@ bool init(void) {
 
     running = true;
     return true;
-    ;
 }
 
 void quit_game(void);
@@ -63,7 +62,7 @@ void draw_square(int x, int y, int fill) {
     SDL_RenderFillRect(renderer, &rect);
 }
 
-/*
+/**
 CHIP8:
 1 2 3 C
 4 5 6 D
@@ -76,26 +75,54 @@ Q W E R
 A S D F
 Z X C V
 */
-const SDL_Keycode chip8_keys[] = {
-    [0] = SDLK_x,   [1] = SDLK_1,   [2] = SDLK_2,   [3] = SDLK_3,
-    [4] = SDLK_q,   [5] = SDLK_w,   [6] = SDLK_e,   [7] = SDLK_a,
-    [8] = SDLK_s,   [9] = SDLK_d,   [0xa] = SDLK_z, [0xb] = SDLK_c,
-    [0xc] = SDLK_4, [0xd] = SDLK_r, [0xe] = SDLK_f, [0xf] = SDLK_v,
-};
+static int key_index(const SDL_Keycode kc) {
+    switch (kc) {
+        case SDLK_x:
+            return 0;
+        case SDLK_1:
+            return 1;
+        case SDLK_2:
+            return 2;
+        case SDLK_3:
+            return 3;
+        case SDLK_q:
+            return 4;
+        case SDLK_w:
+            return 5;
+        case SDLK_e:
+            return 6;
+        case SDLK_a:
+            return 7;
+        case SDLK_s:
+            return 8;
+        case SDLK_d:
+            return 9;
+        case SDLK_z:
+            return 10;
+        case SDLK_c:
+            return 11;
+        case SDLK_4:
+            return 12;
+        case SDLK_r:
+            return 13;
+        case SDLK_f:
+            return 14;
+        case SDLK_v:
+            return 15;
+        default:
+            return -1;
+    }
+}
 
-void handle_events() {
+static void handle_events() {
     SDL_Event e;
     while (SDL_PollEvent(&e) != 0) {
         if (e.type == SDL_QUIT) {
             quit_game();
         } else if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) {
-            printf("key %u\n", e.key.keysym.scancode);
-            for (size_t i = 0; i < sizeof(chip8_keys) / sizeof(chip8_keys[0]);
-                 i++) {
-                if (e.key.keysym.sym == chip8_keys[i]) {
-                    c8.key[i] = (e.type == SDL_KEYDOWN) ? 1 : 0;
-                    break;
-                }
+            const int ki = key_index(e.key.keysym.sym);
+            if (-1 != ki) {
+                c8.key[ki] = (e.type == SDL_KEYDOWN) ? 1 : 0;
             }
         }
     }
