@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
@@ -18,6 +20,7 @@ bool frozen = true;
 #define SCREEN_HEIGHT 320
 
 static bool init(void) {
+    srand(time(NULL));
     chip8_reset(&c8);
 
     FILE *const rom_file = fopen("assets/tetris_reassembled.ch8", "rb");
