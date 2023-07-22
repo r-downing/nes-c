@@ -2,9 +2,9 @@
     "version": 3,
     "configurePresets": [
         {
-            "name": "buildpreset1",
-            "displayName": "buildpreset1 preset using toolchain file",
-            "description": "Sets Ninja generator, build and install directory",
+            "name": "emscripten",
+            "displayName": "emscripten preset using toolchain file",
+            "description": "Sets emscripten toolchain file, build and install directory",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
@@ -13,12 +13,12 @@
             }
         },
         {
-            "name": "buildpreset2",
-            "displayName": "buildpreset2 preset using toolchain file",
-            "description": "Sets Ninja generator, build and install directory",
+            "name": "builtin-gcc",
+            "displayName": "builtin-gcc preset w/ Debug",
+            "description": "Sets build and install directory",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
             }
         }

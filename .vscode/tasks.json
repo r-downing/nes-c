@@ -9,7 +9,7 @@
 				"-m",
 				"http.server",
 				"-d",
-				"build/output"
+				"out/build/emscripten/output"
 			],
 			"problemMatcher": []
 		},
