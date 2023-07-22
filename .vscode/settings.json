@@ -4,8 +4,5 @@
         "*.c": "c"
     },
     "files.trimTrailingWhitespace": true,
-    "editor.formatOnSave": true,
-    "cmake.additionalKits": [
-        "/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
-    ]
+    "editor.formatOnSave": true
 }
