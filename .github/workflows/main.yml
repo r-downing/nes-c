@@ -15,7 +15,7 @@ jobs:
       - name: Build
         # Build your program with the given configuration
         run: mkdir -p build && cd build && emcmake cmake .. && make index
-        
+
       - name: Install rsync 📚
         # needed for deploy action
         run: apt-get update && apt-get install -y rsync
@@ -36,12 +36,9 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Libs
-        run: cd lib && chmod +x setup.sh && ./setup.sh
-
       - name: Build
         # Build your program with the given configuration
-        run: mkdir -p build && cd build && emcmake cmake .. && make tests
+        run: mkdir -p build && cd build && cmake .. && make tests
 
       - name: Run Tests
-        run: node build/tests/output/tests.js
+        run: ./build/tests/output/tests -c

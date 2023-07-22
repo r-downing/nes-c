@@ -6,7 +6,7 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 
-#include "../src/chip8_impl.h"
+#include "../src/chip8/chip8_impl.h"
 }
 
 int chip8_impl_rand(void) {
@@ -629,7 +629,3 @@ TEST(Chip8TestGroup, test_FXRR) {
     chip8_load_instructions(&c, instr, (sizeof(instr) / sizeof(instr[0])));
     step_chip8(CHIP8_ERROR_UNKNOWN_OPCODE);
 }
-
-#include "CppUTest/CommandLineTestRunner.h"
-
-int main(int argc, char **argv) { return RUN_ALL_TESTS(argc, argv); }
