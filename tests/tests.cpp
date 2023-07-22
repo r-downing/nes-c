@@ -2,11 +2,11 @@
 #include <CppUTestExt/MockSupport.h>
 
 extern "C" {
+#include <chip8.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "../src/chip8_impl.h"
-#include <chip8.h>
 }
 
 int chip8_impl_rand(void) {
