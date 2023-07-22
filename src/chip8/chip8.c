@@ -173,8 +173,9 @@ static CHIP8_ERROR op_handler_8(Chip8 *const c, const Chip8Opcode *const op) {
             return CHIP8_ERROR_NONE;
         }
         case 6: {
-            c->v[0xF] = c->v[op->X] & 1;
+            const uint8_t lsb = c->v[op->X] & 1;
             c->v[op->X] >>= 1;
+            c->v[0xF] = lsb;
             return CHIP8_ERROR_NONE;
         }
         case 7: {
@@ -184,8 +185,9 @@ static CHIP8_ERROR op_handler_8(Chip8 *const c, const Chip8Opcode *const op) {
             return CHIP8_ERROR_NONE;
         }
         case 0xE: {
-            c->v[0xF] = c->v[op->X] >> 7;
+            const uint8_t msb = c->v[op->X] >> 7;
             c->v[op->X] <<= 1;
+            c->v[0xF] = msb;
             return CHIP8_ERROR_NONE;
         }
         default: {
