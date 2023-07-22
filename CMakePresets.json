@@ -1,0 +1,26 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "buildpreset1",
+            "displayName": "buildpreset1 preset using toolchain file",
+            "description": "Sets Ninja generator, build and install directory",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_TOOLCHAIN_FILE": "/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
+            }
+        },
+        {
+            "name": "buildpreset2",
+            "displayName": "buildpreset2 preset using toolchain file",
+            "description": "Sets Ninja generator, build and install directory",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
+            }
+        }
+    ]
+}
