@@ -59,6 +59,9 @@
     </div>
 
     <pre id="stdout"></pre>
+    <br />
+    <a href="https://github.com/r-downing/chip8-wasm"><img
+            src="https://github.githubassets.com/favicons/favicon-dark.png" /></a>
 
     <!-- Allow the C++ to access the canvas element -->
     <script type='text/javascript'>
@@ -89,18 +92,7 @@
         button.onclick = () => {
             fetch("/tetris_reassembled_ch8/tetris_reassembled.ch8")
                 .then((response) => response.arrayBuffer())
-                .then((buf) => {
-
-                    const uint8Arr = new Uint8Array(buf);
-                    const num_bytes = uint8Arr.length * uint8Arr.BYTES_PER_ELEMENT;
-                    const data_ptr = Module._malloc(num_bytes);
-                    const data_on_heap = new Uint8Array(Module.HEAPU8.buffer, data_ptr, num_bytes);
-                    data_on_heap.set(uint8Arr);
-                    console.log("num_bytes");
-                    console.log(num_bytes);
-                    const res = Module.ccall('jscallback', 'number', ['number', 'number'], [data_on_heap.byteOffset, uint8Arr.length]);
-                    Module._free(data_ptr);
-                });
+                .then(chip8_load_rom);
         }
 
 
@@ -108,15 +100,6 @@
             const file_reader = new FileReader();
             file_reader.onload = (event) => {
                 chip8_load_rom(event.target.result);
-                // const uint8Arr = new Uint8Array(event.target.result);
-                // const num_bytes = uint8Arr.length * uint8Arr.BYTES_PER_ELEMENT;
-                // const data_ptr = Module._malloc(num_bytes);
-                // const data_on_heap = new Uint8Array(Module.HEAPU8.buffer, data_ptr, num_bytes);
-                // data_on_heap.set(uint8Arr);
-                // console.log("num_bytes");
-                // console.log(num_bytes);
-                // const res = Module.ccall('jscallback', 'number', ['number', 'number'], [data_on_heap.byteOffset, uint8Arr.length]);
-                // Module._free(data_ptr);
             };
             file_reader.readAsArrayBuffer(e.target.files[0]);
         };
