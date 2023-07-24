@@ -13,8 +13,7 @@ static SDL_Renderer *renderer = NULL;
 
 static Chip8 c8 = {0};
 
-bool running = false;
-bool frozen = true;
+static bool running = false;
 
 #define SCREEN_SCALE 16
 #define SCREEN_WIDTH (SCREEN_SCALE * CHIP8_SCREEN_WIDTH)
@@ -23,17 +22,6 @@ bool frozen = true;
 static bool init(void) {
     srand(time(NULL));
     chip8_reset(&c8);
-
-    // FILE *const rom_file = fopen("assets/tetris_reassembled.ch8", "rb");
-    // if (!rom_file) {
-    //     printf("Couldn't open rom file\n");
-    //     return false;
-    // }
-
-    // const size_t loaded = chip8_load_file(&c8, rom_file);
-    // printf("loaded %lu bytes rom\n", loaded);
-
-    // fclose(rom_file);
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("SDL could not be initiliazed. SDL_Error: %s\n", SDL_GetError());
@@ -50,7 +38,6 @@ static bool init(void) {
     }
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-    running = true;
     return true;
 }
 
@@ -148,14 +135,11 @@ void quit_game(void) {
 #endif
 }
 
-EMSCRIPTEN_KEEPALIVE
-void pause(void) { frozen = !frozen; }
-
 void main_loop(void) {
     // printf("asdf\n");
     handle_events();
 
-    if (frozen) return;
+    if (!running) return;
 
     for (int i = 0; i < 100; i++) {
         const CHIP8_ERROR err = chip8_cycle(&c8);
@@ -173,21 +157,17 @@ void main_loop(void) {
         }
     }
 
-    // SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-
     SDL_RenderPresent(renderer);
-
-    // SDL_Delay(70);
 }
 
 EMSCRIPTEN_KEEPALIVE
 bool jscallback(uint8_t *data, size_t length) {
-    printf("len %lu\n", length);
-    printf("data[0] %u\n", data[0]);
+    printf("loading rom, length %lu b\n", length);
     if (CHIP8_ERROR_NONE == chip8_load_rom_data(&c8, data, length)) {
-        frozen = false;
+        running = true;
         return true;
     }
+    printf("failed to load romn\n");
     return false;
 }
 

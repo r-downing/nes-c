@@ -14,10 +14,31 @@
             width: 100%;
         }
 
+        #screen {
+            position: relative;
+        }
+
         #canvas {
             border: 1px dotted lime;
             display: block;
             margin: auto;
+        }
+
+        #loadroms {
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        #stdout {
+            height: 16em;
+            overflow: auto;
+            border: 1px dotted white;
         }
     </style>
 </head>
@@ -25,15 +46,19 @@
 <body>
 
     <!-- Create the canvas that the C++ code will draw into -->
-    <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
-    <br />
-    <button id="startbutton">tetris_reassembled</button>
-    <br />
-    <input type="file" id="fileloader" onchange="open_file(event)" />
-    <pre id="stdout"></pre>
-    <!-- <br /> -->
-    <!-- <textarea id="output" rows="8"></textarea> -->
+    <div id="screen">
+        <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+        <div id="loadroms">
+            <div>
+                <p>Load from file:</p>
+                <input type="file" id="fileloader" onchange="open_file(event)" />
+                <p>Example Roms:</p>
+                <button id="startbutton">tetris_reassembled</button>
+            </div>
+        </div>
+    </div>
 
+    <pre id="stdout"></pre>
 
     <!-- Allow the C++ to access the canvas element -->
     <script type='text/javascript'>
@@ -55,7 +80,7 @@
             const res = Module.ccall('jscallback', 'number', ['number', 'number'], [data_on_heap.byteOffset, uint8Arr.length]);
             // console.log("res " + res);
             if (res) {
-                document.querySelector("#fileloader").style.display = "none";
+                document.querySelector("#loadroms").style.display = "none";
             }
             Module._free(data_ptr);
         };
