@@ -16,23 +16,24 @@ static Chip8 c8 = {0};
 bool running = false;
 bool frozen = true;
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 320
+#define SCREEN_SCALE 16
+#define SCREEN_WIDTH (SCREEN_SCALE * CHIP8_SCREEN_WIDTH)
+#define SCREEN_HEIGHT (SCREEN_SCALE * CHIP8_SCREEN_HEIGHT)
 
 static bool init(void) {
     srand(time(NULL));
     chip8_reset(&c8);
 
-    FILE *const rom_file = fopen("assets/tetris_reassembled.ch8", "rb");
-    if (!rom_file) {
-        printf("Couldn't open rom file\n");
-        return false;
-    }
+    // FILE *const rom_file = fopen("assets/tetris_reassembled.ch8", "rb");
+    // if (!rom_file) {
+    //     printf("Couldn't open rom file\n");
+    //     return false;
+    // }
 
-    const size_t loaded = chip8_load_file(&c8, rom_file);
-    printf("loaded %lu bytes rom\n", loaded);
+    // const size_t loaded = chip8_load_file(&c8, rom_file);
+    // printf("loaded %lu bytes rom\n", loaded);
 
-    fclose(rom_file);
+    // fclose(rom_file);
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("SDL could not be initiliazed. SDL_Error: %s\n", SDL_GetError());
@@ -56,7 +57,10 @@ static bool init(void) {
 void quit_game(void);
 
 void draw_square(int x, int y, int fill) {
-    const SDL_Rect rect = {.x = x * 10, .y = y * 10, .w = 9, .h = 9};
+    const SDL_Rect rect = {.x = x * SCREEN_SCALE,
+                           .y = y * SCREEN_SCALE,
+                           .w = (SCREEN_SCALE - 1),
+                           .h = (SCREEN_SCALE - 1)};
 
     fill = fill ? 255 : 0;
 
@@ -151,14 +155,16 @@ void main_loop(void) {
     // printf("asdf\n");
     handle_events();
 
-    // if (frozen)
-    //     return;
+    if (frozen) return;
 
     for (int i = 0; i < 100; i++) {
-        chip8_cycle(&c8);
+        const CHIP8_ERROR err = chip8_cycle(&c8);
+        if (CHIP8_ERROR_NONE != err) {
+            printf("chip8_cycle err %u\n", err);
+        }
     }
 
-    SDL_SetRenderDrawColor(renderer, 18, 1, 54, SDL_ALPHA_OPAQUE);
+    SDL_SetRenderDrawColor(renderer, 0, 32, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 
     for (int x = 0; x < 64; x++) {
@@ -175,11 +181,14 @@ void main_loop(void) {
 }
 
 EMSCRIPTEN_KEEPALIVE
-void jscallback(uint8_t *data, size_t length) {
+bool jscallback(uint8_t *data, size_t length) {
     printf("len %lu\n", length);
     printf("data[0] %u\n", data[0]);
-    // chip8_load_rom_data(&c8, data, length);
-    frozen = false;
+    if (CHIP8_ERROR_NONE == chip8_load_rom_data(&c8, data, length)) {
+        frozen = false;
+        return true;
+    }
+    return false;
 }
 
 EMSCRIPTEN_KEEPALIVE
