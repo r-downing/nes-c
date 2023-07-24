@@ -27,7 +27,7 @@
     <!-- Create the canvas that the C++ code will draw into -->
     <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
     <br />
-    <button id="startbutton">start</button>
+    <button id="startbutton">tetris_reassembled</button>
     <br />
     <input type="file" id="fileloader" onchange="open_file(event)" />
     <pre id="stdout"></pre>
@@ -62,7 +62,7 @@
 
         let button = document.querySelector("#startbutton");
         button.onclick = () => {
-            fetch("assets/tetris_reassembled.ch8")
+            fetch("/tetris_reassembled_ch8/tetris_reassembled.ch8")
                 .then((response) => response.arrayBuffer())
                 .then((buf) => {
 
