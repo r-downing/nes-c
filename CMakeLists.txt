@@ -12,5 +12,8 @@ add_subdirectory(src)
 
 if(NOT EMCC_DETECTED)
     add_subdirectory(lib/cpputest)
+    if(WIN32)
+        add_subdirectory(lib/SDL)
+    endif()
     add_subdirectory(tests)
 endif()

@@ -1,12 +1,25 @@
 #include <SDL2/SDL.h>
 #include <chip8.h>
-#include <emscripten.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#else
+
+#define EMSCRIPTEN_KEEPALIVE
+static bool quit = false;
+static void emscripten_set_main_loop(void (*func)(void), int x, int y) {
+    while (!quit) {
+        func();
+    }
+}
+static void emscripten_cancel_main_loop() { quit = true; }
+#endif
 
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
@@ -31,6 +44,7 @@ static bool init(void) {
     window = SDL_CreateWindow("emscripten chip8", SDL_WINDOWPOS_UNDEFINED,
                               SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH,
                               SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+
     if (!window) {
         printf("SDL_Window could not be initialized. SDL_Error: %s\n",
                SDL_GetError());
@@ -130,13 +144,10 @@ void quit_game(void) {
 
     SDL_Quit();
 
-#ifdef __EMSCRIPTEN__
     emscripten_cancel_main_loop();
-#endif
 }
 
 void main_loop(void) {
-    // printf("asdf\n");
     handle_events();
 
     if (!running) return;
@@ -172,7 +183,7 @@ bool jscallback(uint8_t *data, size_t length) {
 }
 
 EMSCRIPTEN_KEEPALIVE
-int main(void) {
+int main(int argc, char *argv[]) {
     printf("built %s @ %s\n", __DATE__, __TIME__);
 
     if (!init()) return -1;
