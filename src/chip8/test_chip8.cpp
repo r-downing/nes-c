@@ -6,7 +6,7 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 
-#include "../src/chip8/chip8_impl.h"
+#include "chip8_impl.h"
 }
 
 int chip8_impl_rand(void) {
