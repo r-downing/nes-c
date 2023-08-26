@@ -5,8 +5,6 @@ extern "C" {
 #include <c6502.h>
 #include <stdlib.h>
 #include <string.h>
-
-// #include "../src/chip8/chip8_impl.h"
 }
 
 uint8_t bus_read(void *ctx, uint16_t addr) {
@@ -33,6 +31,7 @@ TEST_GROUP(C6502TestGroup) {
         memset(mem, 0, sizeof(mem));
         c.bus = &bus;
         // c6502_reset(&c);
+        // c.cycles_remaining = 0;
     }
 
     TEST_TEARDOWN() {
@@ -41,8 +40,14 @@ TEST_GROUP(C6502TestGroup) {
     }
 };
 
+TEST(C6502TestGroup, test_reset) {
+    c6502_reset(&c);
+}
+
 // BRK IMP 7
-// TEST(C6502TestGroup, test_0x00) {}  // ToDo
+TEST(C6502TestGroup, test_0x00) {
+    // ToDo
+}
 
 // ORA INDX 6
 // TEST(C6502TestGroup, test_0x01) {}  // ToDo
@@ -132,13 +137,47 @@ TEST(C6502TestGroup, test_0x10) {
     c.SR.N = 1;
     CHECK_EQUAL(2, c6202_run_next_instruction(&c));
     CHECK_EQUAL(c.PC, 2002);
-}  // ToDo
+}
 
 // ORA INY 5'
-// TEST(C6502TestGroup, test_0x11) {}  // ToDo
+TEST(C6502TestGroup, test_0x11) {
+    c.PC = 500;
+    mem[500] = 0x11;
+    mem[501] = 34;
+    mem[34] = 0x12;
+    mem[35] = 0x34;
+    c.Y = 0x22;
+    mem[0x3434] = 0b11001100;
+    c.AC = 0b00000001;
+    CHECK_EQUAL(5, c6202_run_next_instruction(&c));
+    CHECK_EQUAL(c.AC, 0b11001101);
+    CHECK_EQUAL(c.SR.Z, 0);
+    CHECK_EQUAL(c.SR.N, 1);
+
+    c.PC = 500;
+    mem[500] = 0x11;
+    mem[501] = 34;
+    mem[34] = 0x12;
+    mem[35] = 0x34;
+    c.Y = 0xF0;
+    mem[0x3502] = 0b10;
+    c.AC = 0b1;
+    CHECK_EQUAL(6, c6202_run_next_instruction(&c));
+    CHECK_EQUAL(c.AC, 0b11);
+    CHECK_EQUAL(c.SR.Z, 0);
+    CHECK_EQUAL(c.SR.N, 0);
+}
 
 // ORA ZPX 4
-// TEST(C6502TestGroup, test_0x15) {}  // ToDo
+TEST(C6502TestGroup, test_0x15) {
+    c.PC = 800;
+    mem[800] = 0x15;
+    mem[801] = 0x30;
+    mem[0x30] = 0b1010;
+    c.AC = 0b1001;
+    CHECK_EQUAL(4, c6202_run_next_instruction(&c));
+    CHECK_EQUAL(c.AC, 0b1011);
+}
 
 // ASL ZPX 6
 TEST(C6502TestGroup, test_0x16) {
