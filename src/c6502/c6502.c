@@ -7,12 +7,12 @@ static const uint16_t STACK_BASE = 0x100;
 static const uint16_t IRQ_ADDR = 0xFFFE;
 
 /** read a byte from the bus at the specified address */
-static uint8_t read(const C6502 *const c, uint16_t addr) {
+static uint8_t read(const C6502 *const c, const uint16_t addr) {
     return c->bus->read(c->bus->ctx, addr);
 }
 
 /** write a byte to the bus at the specified address */
-static bool write(const C6502 *const c, uint16_t addr, uint8_t val) {
+static bool write(const C6502 *const c, const uint16_t addr, const uint8_t val) {
     return c->bus->write(c->bus->ctx, addr, val);
 }
 
