@@ -31,6 +31,9 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
+            },
+            "environment": {
+                "CTEST_OUTPUT_ON_FAILURE": "true"
             }
         }
     ]

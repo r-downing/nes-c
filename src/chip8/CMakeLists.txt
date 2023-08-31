@@ -4,3 +4,4 @@ target_include_directories(chip8 PUBLIC inc)
 
 add_executable(test_chip8 test_chip8.cpp)
 target_link_libraries(test_chip8 test_runner CppUTest CppUTestExt chip8)
+add_test(NAME test_chip8 COMMAND test_chip8)
