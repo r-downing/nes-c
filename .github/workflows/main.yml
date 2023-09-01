@@ -38,7 +38,7 @@ jobs:
 
       - name: Build
         # Build your program with the given configuration
-        run: cmake --preset builtin-gcc && cd out/build/builtin-gcc/ && make tests
+        run: cmake --preset builtin-gcc && cd out/build/builtin-gcc/ && make
 
       - name: Run Tests
-        run: ./out/build/builtin-gcc/tests/tests -c
+        run: cd out/build/builtin-gcc/ && ctest -T test -R test
