@@ -520,6 +520,22 @@ static void OP_TYA(C6502 *const c, const Op *) {
     update_ZN(c, c->AC);
 }
 
+// unofficial opcodes
+static void OP_LAX(C6502 *const c, const Op *) {
+    c->AC = c->X = read(c, c->addr);
+    update_ZN(c, c->AC);
+}
+
+static void OP_SAX(C6502 *const c, const Op *) {
+    write(c, c->addr, c->AC & c->X);
+}
+
+static void OP_DCP(C6502 *const c, const Op *) {
+    const uint8_t m = read(c, c->addr) - 1;
+    write(c, c->addr, m);
+    update_ZN(c, c->AC - m);
+}
+
 static const Op optable[0x100] = {
     [0x00] = {OP_BRK, AM_IMP, 7},
     [0x10] = {OP_BPL, AM_REL, 2},  //''
@@ -561,6 +577,12 @@ static const Op optable[0x100] = {
     [0xE2] = {OP_NOP, AM_IMM, 2},
 
     // x3
+    [0x83] = {OP_SAX, AM_INX, 6},
+    //
+    [0xA3] = {OP_LAX, AM_INX, 6},
+    [0xB3] = {OP_LAX, AM_INY, 5, .page_break_extra_cycle = true},
+    [0xC3] = {OP_DCP, AM_INX, 8},
+    [0xD3] = {OP_DCP, AM_INY, 8},
 
     [0x04] = {OP_NOP, AM_ZP, 3},
     [0x14] = {OP_NOP, AM_ZPX, 4},
@@ -612,6 +634,13 @@ static const Op optable[0x100] = {
     [0xD6] = {OP_DEC, AM_ZPX, 6},
     [0xE6] = {OP_INC, AM_ZP, 5},
     [0xF6] = {OP_INC, AM_ZPX, 6},
+
+    [0x87] = {OP_SAX, AM_ZP, 3},
+    [0x97] = {OP_SAX, AM_ZPY, 4},
+    [0xA7] = {OP_LAX, AM_ZP, 3},
+    [0xB7] = {OP_LAX, AM_ZPY, 4},
+    [0xC7] = {OP_DCP, AM_ZP, 5},
+    [0xD7] = {OP_DCP, AM_ZPX, 6},
 
     [0x08] = {OP_PHP, AM_IMP, 3},
     [0x18] = {OP_CLC, AM_IMP, 2},
@@ -665,6 +694,10 @@ static const Op optable[0x100] = {
     [0xFA] = {OP_NOP, AM_IMP, 2},
 
     // xB
+    [0xAB] = {OP_LAX, AM_IMM, 2},
+    //
+    [0xDB] = {OP_DCP, AM_ABY, 7},
+    [0xEB] = {OP_SBC, AM_IMM, 2},
 
     [0x0C] = {OP_NOP, AM_ABS, 4},
     [0x1C] = {OP_NOP, AM_ABX, 4, .page_break_extra_cycle = true},
@@ -716,6 +749,14 @@ static const Op optable[0x100] = {
     [0xDE] = {OP_DEC, AM_ABX, 7},
     [0xEE] = {OP_INC, AM_ABS, 6},
     [0xFE] = {OP_INC, AM_ABX, 7},
+
+    [0x8F] = {OP_SAX, AM_ABS, 4},
+    //
+    [0xAF] = {OP_LAX, AM_ABS, 4},
+    [0xBF] = {OP_LAX, AM_ABY, 4, .page_break_extra_cycle = true},
+    [0xCF] = {OP_DCP, AM_ABS, 6},
+    [0xDF] = {OP_DCP, AM_ABX, 7},
+
 };
 
 bool c6202_cycle(C6502 *const c) {
