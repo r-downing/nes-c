@@ -52,7 +52,7 @@ static uint8_t stack_pop(C6502 *const c) {
 
 static uint16_t stack_pop_u16(C6502 *const c) {
     const uint16_t lo = stack_pop(c);
-    return (stack_pop(c) << 8) | lo;
+    return (((uint16_t)stack_pop(c)) << 8) | lo;
 }
 
 typedef struct Op {
@@ -75,7 +75,7 @@ static uint16_t AM_IMP(C6502 *, const Op *) {
 
 /** Immediate - next byte */
 static uint16_t AM_IMM(C6502 *const c, const Op *) {
-    return ++(c->PC);
+    return (c->PC)++;
 }
 
 /** Zero-page - zero page - next byte is offset into page 0 */
@@ -111,7 +111,7 @@ static uint16_t AM_ABX(C6502 *const c, const Op *const op) {
     if (op->page_break_extra_cycle && page_break(ret, addr)) {
         c->cycles_remaining++;
     }
-    return addr;
+    return ret;
 }
 
 /** Absolute w/ Y offset - full 16b addr +Y */
@@ -121,7 +121,7 @@ static uint16_t AM_ABY(C6502 *const c, const Op *const op) {
     if (op->page_break_extra_cycle && page_break(ret, addr)) {
         c->cycles_remaining++;
     }
-    return addr;
+    return ret;
 }
 
 /** Indirect - 16b pointer */
@@ -135,14 +135,18 @@ static uint16_t AM_IND(C6502 *const c, const Op *) {
 
 /** Indirect w/ X offset - 16b pointer +X */
 static uint16_t AM_INX(C6502 *const c, const Op *) {
-    const uint8_t zpi = read(c, c->PC++) + c->X;  // add to x (no carry)
-    return read_u16(c, zpi);
+    uint8_t zpi = read(c, c->PC++) + c->X;  // add to x (no carry)
+    const uint16_t lo = read(c, zpi++);
+    const uint16_t hi = read(c, zpi);  // 2nd byte may wrap around to start of zero-page
+    return (hi << 8) | lo;
 }
 
 /** */
 static uint16_t AM_INY(C6502 *const c, const Op *const op) {
-    const uint8_t zpi = read(c, c->PC++);
-    const uint16_t addr = read_u16(c, zpi);
+    uint8_t zpi = read(c, c->PC++);
+    const uint16_t lo = read(c, zpi++);
+    const uint16_t hi = read(c, zpi);  // 2nd byte may wrap around to start of zero-page
+    const uint16_t addr = (hi << 8) | lo;
     const uint16_t ret = addr + c->Y;
     if (op->page_break_extra_cycle && page_break(ret, addr)) {
         c->cycles_remaining++;
@@ -213,8 +217,9 @@ static void OP_BEQ(C6502 *const c, const Op *) {
 }
 
 static void OP_BIT(C6502 *const c, const Op *) {
-    const uint8_t val = c->AC & read(c, c->addr);
-    c->SR.Z = (0 == val) ? 1 : 0;
+    const uint8_t val = read(c, c->addr);
+    const uint8_t result = c->AC & val;
+    c->SR.Z = (0 == result) ? 1 : 0;
     c->SR.N = val >> 7;
     c->SR.V = (val >> 6) & 1;
 }
@@ -339,7 +344,7 @@ static void OP_JMP(C6502 *const c, const Op *) {
 }
 
 static void OP_JSR(C6502 *const c, const Op *) {
-    stack_push_u16(c, c->SP - 1);
+    stack_push_u16(c, c->PC - 1);
     c->PC = c->addr;
 }
 
@@ -399,8 +404,11 @@ static void OP_PLA(C6502 *const c, const Op *) {
 }
 
 static void OP_PLP(C6502 *const c, const Op *) {
+    typeof(c->SR) sr = c->SR;
+
     c->SR.u8 = stack_pop(c);
-    c->SR._unused = 1;
+    c->SR._unused = sr._unused;
+    c->SR.B = sr.B;
 }
 
 static uint8_t rol(C6502 *const c, const uint8_t val) {
@@ -434,9 +442,10 @@ static void OP_ROR(C6502 *const c, const Op *const op) {
 }
 
 static void OP_RTI(C6502 *const c, const Op *) {
+    typeof(c->SR) sr_prev = c->SR;
     c->SR.u8 = stack_pop(c);
-    c->SR.B = 0;
-    c->SR._unused = 0;
+    c->SR.B = sr_prev.B;
+    c->SR._unused = sr_prev._unused;
     c->PC = stack_pop_u16(c);
 }
 
