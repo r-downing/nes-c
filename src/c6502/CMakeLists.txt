@@ -5,3 +5,10 @@ target_include_directories(c6502 PUBLIC inc)
 add_executable(test_c6502 tests/test_c6502.cpp)
 target_link_libraries(test_c6502 test_runner CppUTest CppUTestExt c6502)
 add_test(NAME test_c6502 COMMAND test_c6502)
+
+
+add_executable(nes_test_runner tests/nes_test_runner.c)
+target_link_libraries(nes_test_runner c6502)
+
+
+add_test(NAME nes_test COMMAND python "${CMAKE_CURRENT_SOURCE_DIR}/tests/nes_test_driver.py" nes_test_runner "${CMAKE_CURRENT_SOURCE_DIR}/tests/nestest.nes"  "${CMAKE_CURRENT_SOURCE_DIR}/tests/nestest.log")
