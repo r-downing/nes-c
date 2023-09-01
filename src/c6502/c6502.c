@@ -529,7 +529,7 @@ static const Op optable[0x100] = {
     [0x50] = {OP_BVC, AM_REL, 2},  //''
     [0x60] = {OP_RTS, AM_IMP, 6},
     [0x70] = {OP_BVS, AM_REL, 2},  //''
-    // [0x80] = {},
+    [0x80] = {OP_NOP, AM_IMM, 2},
     [0x90] = {OP_BCC, AM_REL, 2},  //''
     [0xA0] = {OP_LDY, AM_IMM, 2},
     [0xB0] = {OP_BCS, AM_REL, 2},  //''
@@ -555,20 +555,29 @@ static const Op optable[0x100] = {
     [0xE1] = {OP_SBC, AM_INX, 6},
     [0xF1] = {OP_SBC, AM_INY, 5, .page_break_extra_cycle = true},
 
+    [0x82] = {OP_NOP, AM_IMM, 2},
     [0xA2] = {OP_LDX, AM_IMM, 2},
+    [0xC2] = {OP_NOP, AM_IMM, 2},
+    [0xE2] = {OP_NOP, AM_IMM, 2},
 
     // x3
 
+    [0x04] = {OP_NOP, AM_ZP, 3},
+    [0x14] = {OP_NOP, AM_ZPX, 4},
     [0x24] = {OP_BIT, AM_ZP, 3},
-    // ...
+    [0x34] = {OP_NOP, AM_ZPX, 4},
+    [0x44] = {OP_NOP, AM_ZP, 3},
+    [0x54] = {OP_NOP, AM_ZPX, 4},
+    [0x64] = {OP_NOP, AM_ZP, 3},
+    [0x74] = {OP_NOP, AM_ZPX, 4},
     [0x84] = {OP_STY, AM_ZP, 3},
     [0x94] = {OP_STY, AM_ZPX, 4},
     [0xA4] = {OP_LDY, AM_ZP, 3},
     [0xB4] = {OP_LDY, AM_ZPX, 4},
     [0xC4] = {OP_CPY, AM_ZP, 3},
-    // [0xD4] = {},
+    [0xD4] = {OP_NOP, AM_ZPX, 4},
     [0xE4] = {OP_CPX, AM_ZP, 3},
-    // [0xF4] = {},
+    [0xF4] = {OP_NOP, AM_ZPX, 4},
 
     [0x05] = {OP_ORA, AM_ZP, 3},
     [0x15] = {OP_ORA, AM_ZPX, 4},
@@ -629,7 +638,7 @@ static const Op optable[0x100] = {
     [0x59] = {OP_EOR, AM_ABY, 4, .page_break_extra_cycle = true},
     [0x69] = {OP_ADC, AM_IMM, 2},
     [0x79] = {OP_ADC, AM_ABY, 4, .page_break_extra_cycle = true},
-    // [0x89] = {},
+    [0x89] = {OP_NOP, AM_IMM, 2},
     [0x99] = {OP_STA, AM_ABY, 5},
     [0xA9] = {OP_LDA, AM_IMM, 2},
     [0xB9] = {OP_LDA, AM_ABY, 4, .page_break_extra_cycle = true},
@@ -639,38 +648,40 @@ static const Op optable[0x100] = {
     [0xF9] = {OP_SBC, AM_ABY, 4, .page_break_extra_cycle = true},
 
     [0x0A] = {OP_ASL, AM_ACC, 2},
-    //
+    [0x1A] = {OP_NOP, AM_IMP, 2},
     [0x2A] = {OP_ROL, AM_ACC, 2},
-    //
+    [0x3A] = {OP_NOP, AM_IMP, 2},
     [0x4A] = {OP_LSR, AM_ACC, 2},
-    //
+    [0x5A] = {OP_NOP, AM_IMP, 2},
     [0x6A] = {OP_ROR, AM_ACC, 2},
-    // [0x7A] = {},
+    [0x7A] = {OP_NOP, AM_IMP, 2},
     [0x8A] = {OP_TXA, AM_IMP, 2},
     [0x9A] = {OP_TXS, AM_IMP, 2},
     [0xAA] = {OP_TAX, AM_IMP, 2},
     [0xBA] = {OP_TSX, AM_IMP, 2},
     [0xCA] = {OP_DEX, AM_IMP, 2},
-    // [0xDA] = {},
+    [0xDA] = {OP_NOP, AM_IMP, 2},
     [0xEA] = {OP_NOP, AM_IMP, 2},
-    // [0xFA] = {},
+    [0xFA] = {OP_NOP, AM_IMP, 2},
 
     // xB
 
+    [0x0C] = {OP_NOP, AM_ABS, 4},
+    [0x1C] = {OP_NOP, AM_ABX, 4, .page_break_extra_cycle = true},
     [0x2C] = {OP_BIT, AM_ABS, 4},
-    // [0x3C] = {},
+    [0x3C] = {OP_NOP, AM_ABX, 4, .page_break_extra_cycle = true},
     [0x4C] = {OP_JMP, AM_ABS, 3},
-    // [0x5C] = {},
+    [0x5C] = {OP_NOP, AM_ABX, 4, .page_break_extra_cycle = true},
     [0x6C] = {OP_JMP, AM_IND, 5},
-    // [0x7C] = {},
+    [0x7C] = {OP_NOP, AM_ABX, 4, .page_break_extra_cycle = true},
     [0x8C] = {OP_STY, AM_ABS, 4},
     // [0x9C] = {},
     [0xAC] = {OP_LDY, AM_ABS, 4},
     [0xBC] = {OP_LDY, AM_ABX, 4, .page_break_extra_cycle = true},
     [0xCC] = {OP_CPY, AM_ABS, 4},
-    // [0xDC] = {},
+    [0xDC] = {OP_NOP, AM_ABX, 4, .page_break_extra_cycle = true},
     [0xEC] = {OP_CPX, AM_ABS, 4},
-    // [0xFC] = {},
+    [0xFC] = {OP_NOP, AM_ABX, 4, .page_break_extra_cycle = true},
 
     [0x0D] = {OP_ORA, AM_ABS, 4},
     [0x1D] = {OP_ORA, AM_ABX, 4, .page_break_extra_cycle = true},
