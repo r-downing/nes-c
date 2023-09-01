@@ -1,30 +1,15 @@
-
+#pragma once
+#include <nes_cart.h>
 #include <stdint.h>
 
-struct NesMapper;
+// https://www.nesdev.org/wiki/Mapper
 
 typedef struct {
-    uint32_t (*prg_read)(struct NesMapper *, uint16_t addr);
-    uint32_t (*prg_write)(struct NesMapper *, uint16_t addr);
-
-    uint32_t (*chr_read)(struct NesMapper *, uint16_t addr);
-    uint32_t (*chr_write)(struct NesMapper *, uint16_t addr);
-} NesMapperInterface;
-
-typedef struct {
-    uint8_t num_prg_banks;
-    uint8_t num_chr_banks;
-
-    const NesMapperInterface *interface;
-    void *_priv;
-
-} NesMapper;
-
-typedef int NesMapperType;
-
-void nes_mapper_init(NesMapper *, uint8_t num_prg_banks, uint8_t num_chr_banks, NesMapperType);
-
-void nes_mapper_deinit(NesMapper *);
+    bool (*prg_write)(NesCart *, uint16_t addr, uint8_t val);
+    bool (*prg_read)(NesCart *, uint16_t addr, uint8_t *val_out);
+    void (*init)(NesCart *);
+    void (*deinit)(NesCart *);
+} MapperInterface;
 
 // https://www.nesdev.org/wiki/INES
 static const uint8_t header_cookie[4] = {'N', 'E', 'S', 0x1A};
@@ -81,8 +66,4 @@ typedef union __attribute__((__packed__)) {
     uint8_t prg_ram_size_8KB;
 } RawCartridgeHeader;
 
-#include <assert.h>
-
 static_assert(sizeof(((RawCartridgeHeader *)NULL)->buf) == sizeof(RawCartridgeHeader));
-
-// const int x = sizeof(RawCartridgeHeader);
