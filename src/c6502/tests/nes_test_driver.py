@@ -6,7 +6,7 @@ exe, nes_rom, nes_log = sys.argv[1:4]
 with open(nes_log, "rt") as fp:
     nes_log_lines = fp.readlines()
 
-sp = subprocess.run(f"{exe} {nes_rom} {len(nes_log_lines)}", capture_output=True)
+sp = subprocess.run([exe, nes_rom, str(len(nes_log_lines))], capture_output=True)
 
 assert sp.returncode == 0, f"{sp.returncode}"
 output = sp.stdout.decode().strip().split("\n")
