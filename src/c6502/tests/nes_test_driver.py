@@ -9,7 +9,7 @@ with open(nes_log, "rt") as fp:
 output = subprocess.getoutput(f"{exe} {nes_rom} {len(nes_log_lines)}").split("\n")
 
 
-assert(len(output) == len(nes_log_lines))
+assert (len(output) == len(nes_log_lines)), f"{len(output)} == {len(nes_log_lines)}"
 
 import re
 
