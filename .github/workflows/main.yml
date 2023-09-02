@@ -3,28 +3,28 @@ on: [push, workflow_dispatch]
 permissions:
   contents: write
 jobs:
-  build-and-deploy:
-    concurrency: ci-${{ github.ref }} # Recommended if you intend to make multiple deployments in quick succession.
-    runs-on: ubuntu-latest
-    container:
-      image: emscripten/emsdk:3.1.42
-    steps:
-      - name: Checkout 🛎️
-        uses: actions/checkout@v3
+  # build-and-deploy:
+  #   concurrency: ci-${{ github.ref }} # Recommended if you intend to make multiple deployments in quick succession.
+  #   runs-on: ubuntu-latest
+  #   container:
+  #     image: emscripten/emsdk:3.1.42
+  #   steps:
+  #     - name: Checkout 🛎️
+  #       uses: actions/checkout@v3
 
-      - name: Build
-        # Build your program with the given configuration
-        run: cmake --preset emscripten && cd out/build/emscripten/ && make
+  #     - name: Build
+  #       # Build your program with the given configuration
+  #       run: cmake --preset emscripten && cd out/build/emscripten/ && make
 
-      - name: Install rsync 📚
-        # needed for deploy action
-        run: apt-get update && apt-get install -y rsync
+  #     - name: Install rsync 📚
+  #       # needed for deploy action
+  #       run: apt-get update && apt-get install -y rsync
 
-      - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: gh-pages # The branch the action should deploy to.
-          folder: out/build/emscripten/src/gui/output # The folder the action should deploy.
+  #     - name: Deploy 🚀
+  #       uses: JamesIves/github-pages-deploy-action@v4
+  #       with:
+  #         branch: gh-pages # The branch the action should deploy to.
+  #         folder: out/build/emscripten/src/gui/output # The folder the action should deploy.
   run-tests:
     concurrency: ci-${{ github.ref }} # Recommended if you intend to make multiple deployments in quick succession.
     runs-on: ubuntu-latest

@@ -10,5 +10,5 @@ add_test(NAME test_c6502 COMMAND test_c6502)
 add_executable(nes_test_runner tests/nes_test_runner.c)
 target_link_libraries(nes_test_runner c6502)
 
-
-add_test(NAME nes_test COMMAND python "${CMAKE_CURRENT_SOURCE_DIR}/tests/nes_test_driver.py" nes_test_runner "${CMAKE_CURRENT_SOURCE_DIR}/tests/nestest.nes"  "${CMAKE_CURRENT_SOURCE_DIR}/tests/nestest.log")
+find_package(Python COMPONENTS Interpreter REQUIRED)
+add_test(NAME nes_test COMMAND ${Python_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tests/nes_test_driver.py" nes_test_runner "${CMAKE_CURRENT_SOURCE_DIR}/tests/nestest.nes"  "${CMAKE_CURRENT_SOURCE_DIR}/tests/nestest.log")
