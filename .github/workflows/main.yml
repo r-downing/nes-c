@@ -41,4 +41,4 @@ jobs:
         run: cmake --preset builtin-gcc && cd out/build/builtin-gcc/ && make
 
       - name: Run Tests
-        run: cd out/build/builtin-gcc/ && ctest -T test -R test
+        run: cd out/build/builtin-gcc/ && ctest -T test -R test --output-on-failure
