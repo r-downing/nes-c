@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
     }
     if (argc < 3) {
         printf("Missing step count");
+        return 2;
     }
 
     const int step_count = atoi(argv[2]);
