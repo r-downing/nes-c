@@ -35,6 +35,8 @@ typedef struct {
 } C6502;
 
 void c6502_reset(C6502 *);
+void c6502_irq(C6502 *);
+void c6502_nmi(C6502 *);
 
 bool c6202_cycle(C6502 *);
 

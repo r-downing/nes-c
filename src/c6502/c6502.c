@@ -417,7 +417,7 @@ static void OP_PLP(C6502 *const c, const Op *) {
     c->SR.B = sr.B;
 }
 
-static uint8_t rol(C6502 *const c, const uint8_t val) {
+static uint8_t rotate_left(C6502 *const c, const uint8_t val) {
     const uint8_t shifted = c->SR.C | (val << 1);
     c->SR.C = val >> 7;
     update_ZN(c, shifted);
@@ -426,13 +426,13 @@ static uint8_t rol(C6502 *const c, const uint8_t val) {
 
 static void OP_ROL(C6502 *const c, const Op *const op) {
     if (AM_ACC == op->address_mode_handler) {
-        c->AC = rol(c, c->AC);
+        c->AC = rotate_left(c, c->AC);
     } else {
-        write(c, c->addr, rol(c, read(c, c->addr)));
+        write(c, c->addr, rotate_left(c, read(c, c->addr)));
     }
 }
 
-static uint8_t ror(C6502 *const c, const uint8_t val) {
+static uint8_t rotate_right(C6502 *const c, const uint8_t val) {
     const uint8_t shifted = (c->SR.C << 7) | (val >> 1);
     c->SR.C = val & 1;
     update_ZN(c, shifted);
@@ -441,9 +441,9 @@ static uint8_t ror(C6502 *const c, const uint8_t val) {
 
 static void OP_ROR(C6502 *const c, const Op *const op) {
     if (AM_ACC == op->address_mode_handler) {
-        c->AC = ror(c, c->AC);
+        c->AC = rotate_right(c, c->AC);
     } else {
-        write(c, c->addr, ror(c, read(c, c->addr)));
+        write(c, c->addr, rotate_right(c, read(c, c->addr)));
     }
 }
 
@@ -559,7 +559,7 @@ static void OP_SLO(C6502 *const c, const Op *) {
 }
 
 static void OP_RLA(C6502 *const c, const Op *) {
-    const uint8_t val = rol(c, read(c, c->addr));
+    const uint8_t val = rotate_left(c, read(c, c->addr));
     write(c, c->addr, val);
     c->AC &= val;
     update_ZN(c, c->AC);
@@ -573,7 +573,7 @@ static void OP_SRE(C6502 *const c, const Op *) {
 }
 
 static void OP_RRA(C6502 *const c, const Op *) {
-    const uint8_t val = ror(c, read(c, c->addr));
+    const uint8_t val = rotate_right(c, read(c, c->addr));
     write(c, c->addr, val);
     add(c, val);
 }
@@ -879,4 +879,11 @@ void c6502_reset(C6502 *const c) {
     c->X = 0;
     c->Y = 0;
     c->cycles_remaining = 7;
+}
+
+void c6502_irq(C6502 *) {
+    // ToDO
+}
+void c6502_nmi(C6502 *) {
+    // ToDo
 }
