@@ -453,13 +453,16 @@ static void OP_RTS(C6502 *const c, const Op *) {
     c->PC = stack_pop_u16(c) + 1;
 }
 
-static void OP_SBC(C6502 *const c, const Op *) {
-    const uint8_t val = read(c, c->addr);
+static void sub(C6502 *const c, const uint8_t val) {
     const uint16_t diff = c->AC - val - (c->SR.C ^ 1);
     c->SR.C = (diff >> 8) ^ 1;
     c->SR.V = ((c->AC ^ diff) & (~val ^ diff)) >> 7;
     c->AC = diff;
     update_ZN(c, c->AC);
+}
+
+static void OP_SBC(C6502 *const c, const Op *) {
+    sub(c, read(c, c->addr));
 }
 
 static void OP_SEC(C6502 *const c, const Op *) {
@@ -536,6 +539,19 @@ static void OP_DCP(C6502 *const c, const Op *) {
     update_ZN(c, c->AC - m);
 }
 
+static void OP_ISC(C6502 *const c, const Op *) {
+    const uint8_t val = read(c, c->addr) + 1;
+    write(c, c->addr, val);
+    sub(c, val);
+}
+
+static void OP_SLO(C6502 *const c, const Op *) {
+    const uint8_t val = shift_left(c, read(c, c->addr));
+    write(c, c->addr, val);
+    c->AC |= val;
+    update_ZN(c, c->AC);
+}
+
 static const Op optable[0x100] = {
     [0x00] = {OP_BRK, AM_IMP, 7},
     [0x10] = {OP_BPL, AM_REL, 2},  //''
@@ -576,6 +592,8 @@ static const Op optable[0x100] = {
     [0xC2] = {OP_NOP, AM_IMM, 2},
     [0xE2] = {OP_NOP, AM_IMM, 2},
 
+    [0x03] = {OP_SLO, AM_INX, 8},
+    [0x13] = {OP_SLO, AM_INY, 8},
     // x3
     [0x83] = {OP_SAX, AM_INX, 6},
     //
@@ -583,6 +601,8 @@ static const Op optable[0x100] = {
     [0xB3] = {OP_LAX, AM_INY, 5, .page_break_extra_cycle = true},
     [0xC3] = {OP_DCP, AM_INX, 8},
     [0xD3] = {OP_DCP, AM_INY, 8},
+    [0xE3] = {OP_ISC, AM_INX, 8},
+    [0xF3] = {OP_ISC, AM_INY, 8},
 
     [0x04] = {OP_NOP, AM_ZP, 3},
     [0x14] = {OP_NOP, AM_ZPX, 4},
@@ -635,12 +655,17 @@ static const Op optable[0x100] = {
     [0xE6] = {OP_INC, AM_ZP, 5},
     [0xF6] = {OP_INC, AM_ZPX, 6},
 
+    [0x07] = {OP_SLO, AM_ZP, 5},
+    [0x17] = {OP_SLO, AM_ZPX, 6},
+    //
     [0x87] = {OP_SAX, AM_ZP, 3},
     [0x97] = {OP_SAX, AM_ZPY, 4},
     [0xA7] = {OP_LAX, AM_ZP, 3},
     [0xB7] = {OP_LAX, AM_ZPY, 4},
     [0xC7] = {OP_DCP, AM_ZP, 5},
     [0xD7] = {OP_DCP, AM_ZPX, 6},
+    [0xE7] = {OP_ISC, AM_ZP, 5},
+    [0xF7] = {OP_ISC, AM_ZPX, 6},
 
     [0x08] = {OP_PHP, AM_IMP, 3},
     [0x18] = {OP_CLC, AM_IMP, 2},
@@ -694,10 +719,12 @@ static const Op optable[0x100] = {
     [0xFA] = {OP_NOP, AM_IMP, 2},
 
     // xB
+    [0x1B] = {OP_SLO, AM_ABY, 7},
     [0xAB] = {OP_LAX, AM_IMM, 2},
     //
     [0xDB] = {OP_DCP, AM_ABY, 7},
     [0xEB] = {OP_SBC, AM_IMM, 2},
+    [0xFB] = {OP_ISC, AM_ABY, 7},
 
     [0x0C] = {OP_NOP, AM_ABS, 4},
     [0x1C] = {OP_NOP, AM_ABX, 4, .page_break_extra_cycle = true},
@@ -750,12 +777,16 @@ static const Op optable[0x100] = {
     [0xEE] = {OP_INC, AM_ABS, 6},
     [0xFE] = {OP_INC, AM_ABX, 7},
 
+    [0x0F] = {OP_SLO, AM_ABS, 6},
+    [0x1F] = {OP_SLO, AM_ABX, 7},
     [0x8F] = {OP_SAX, AM_ABS, 4},
     //
     [0xAF] = {OP_LAX, AM_ABS, 4},
     [0xBF] = {OP_LAX, AM_ABY, 4, .page_break_extra_cycle = true},
     [0xCF] = {OP_DCP, AM_ABS, 6},
     [0xDF] = {OP_DCP, AM_ABX, 7},
+    [0xEF] = {OP_ISC, AM_ABS, 6},
+    [0xFF] = {OP_ISC, AM_ABX, 7},
 
 };
 
