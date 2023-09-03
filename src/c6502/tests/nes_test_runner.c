@@ -48,8 +48,7 @@ int main(int argc, char *argv[]) {
     c6502_reset(&c);
     c.PC = 0xC000;  // manually set PC for headless
     c.SR.I = 1;     // ToDo - investigate
-    int line = 0;
-    int tc = -1;  // ToDo - fix offset, add to c6502 struct
+    int tc = 0;     // ToDo - fix offset, add to c6502 struct
     volatile int bp = 0;
     for (int i = 0; i < step_count; i++) {
         tc += c6202_run_next_instruction(&c);

@@ -161,13 +161,16 @@ static void update_ZN(C6502 *const c, uint8_t val) {
     c->SR.N = val >> 7;
 }
 
-static void OP_ADC(C6502 *const c, const Op *) {
-    const uint8_t val = read(c, c->addr);
+static void add(C6502 *const c, const uint8_t val) {
     const uint16_t sum = c->AC + val + c->SR.C;
     c->SR.V = ((c->AC ^ sum) & (val ^ sum)) >> 7;
     c->SR.C = sum >> 8;
     c->AC = sum;
     update_ZN(c, c->AC);
+}
+
+static void OP_ADC(C6502 *const c, const Op *) {
+    add(c, read(c, c->addr));
 }
 
 static void OP_AND(C6502 *const c, const Op *) {
@@ -378,7 +381,10 @@ static void OP_LSR(C6502 *const c, const Op *const op) {
     }
 }
 
-static void OP_NOP(C6502 *, const Op *) {
+static void OP_NOP(C6502 *const c, const Op *const op) {
+    if ((AM_IMP != op->address_mode_handler) && (AM_ACC != op->address_mode_handler)) {
+        read(c, c->addr);
+    }
     // NOP
 }
 
@@ -552,6 +558,26 @@ static void OP_SLO(C6502 *const c, const Op *) {
     update_ZN(c, c->AC);
 }
 
+static void OP_RLA(C6502 *const c, const Op *) {
+    const uint8_t val = rol(c, read(c, c->addr));
+    write(c, c->addr, val);
+    c->AC &= val;
+    update_ZN(c, c->AC);
+}
+
+static void OP_SRE(C6502 *const c, const Op *) {
+    const uint8_t val = shift_right(c, read(c, c->addr));
+    write(c, c->addr, val);
+    c->AC ^= val;
+    update_ZN(c, c->AC);
+}
+
+static void OP_RRA(C6502 *const c, const Op *) {
+    const uint8_t val = ror(c, read(c, c->addr));
+    write(c, c->addr, val);
+    add(c, val);
+}
+
 static const Op optable[0x100] = {
     [0x00] = {OP_BRK, AM_IMP, 7},
     [0x10] = {OP_BPL, AM_REL, 2},  //''
@@ -587,14 +613,24 @@ static const Op optable[0x100] = {
     [0xE1] = {OP_SBC, AM_INX, 6},
     [0xF1] = {OP_SBC, AM_INY, 5, .page_break_extra_cycle = true},
 
+    // ...
     [0x82] = {OP_NOP, AM_IMM, 2},
+    //
     [0xA2] = {OP_LDX, AM_IMM, 2},
+    //
     [0xC2] = {OP_NOP, AM_IMM, 2},
+    //
     [0xE2] = {OP_NOP, AM_IMM, 2},
+    //
 
     [0x03] = {OP_SLO, AM_INX, 8},
     [0x13] = {OP_SLO, AM_INY, 8},
-    // x3
+    [0x23] = {OP_RLA, AM_INX, 8},
+    [0x33] = {OP_RLA, AM_INY, 8},
+    [0x43] = {OP_SRE, AM_INX, 8},
+    [0x53] = {OP_SRE, AM_INY, 8},
+    [0x63] = {OP_RRA, AM_INX, 8},
+    [0x73] = {OP_RRA, AM_INY, 8},
     [0x83] = {OP_SAX, AM_INX, 6},
     //
     [0xA3] = {OP_LAX, AM_INX, 6},
@@ -657,7 +693,12 @@ static const Op optable[0x100] = {
 
     [0x07] = {OP_SLO, AM_ZP, 5},
     [0x17] = {OP_SLO, AM_ZPX, 6},
-    //
+    [0x27] = {OP_RLA, AM_ZP, 5},
+    [0x37] = {OP_RLA, AM_ZPX, 6},
+    [0x47] = {OP_SRE, AM_ZP, 5},
+    [0x57] = {OP_SRE, AM_ZPX, 6},
+    [0x67] = {OP_RRA, AM_ZP, 5},
+    [0x77] = {OP_RRA, AM_ZPX, 6},
     [0x87] = {OP_SAX, AM_ZP, 3},
     [0x97] = {OP_SAX, AM_ZPY, 4},
     [0xA7] = {OP_LAX, AM_ZP, 3},
@@ -720,7 +761,14 @@ static const Op optable[0x100] = {
 
     // xB
     [0x1B] = {OP_SLO, AM_ABY, 7},
+    [0x3B] = {OP_RLA, AM_ABY, 7},
+    [0x5B] = {OP_SRE, AM_ABY, 7},
+    //
+    [0x7B] = {OP_RRA, AM_ABY, 7},
+    //
+    //
     [0xAB] = {OP_LAX, AM_IMM, 2},
+    //
     //
     [0xDB] = {OP_DCP, AM_ABY, 7},
     [0xEB] = {OP_SBC, AM_IMM, 2},
@@ -779,6 +827,12 @@ static const Op optable[0x100] = {
 
     [0x0F] = {OP_SLO, AM_ABS, 6},
     [0x1F] = {OP_SLO, AM_ABX, 7},
+    [0x2F] = {OP_RLA, AM_ABS, 6},
+    [0x3F] = {OP_RLA, AM_ABX, 7},
+    [0x4F] = {OP_SRE, AM_ABS, 6},
+    [0x5F] = {OP_SRE, AM_ABX, 7},
+    [0x6F] = {OP_RRA, AM_ABS, 6},
+    [0x7F] = {OP_RRA, AM_ABX, 7},
     [0x8F] = {OP_SAX, AM_ABS, 4},
     //
     [0xAF] = {OP_LAX, AM_ABS, 4},
@@ -824,5 +878,5 @@ void c6502_reset(C6502 *const c) {
     c->AC = 0;
     c->X = 0;
     c->Y = 0;
-    c->cycles_remaining = 8;
+    c->cycles_remaining = 7;
 }
