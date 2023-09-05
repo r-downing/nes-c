@@ -16,20 +16,20 @@ bool bus_write(void *ctx, uint16_t addr, uint8_t val) {
     return true;
 }
 
+static const C6502BusInterface bus = {
+    .read = bus_read,
+    .write = bus_write,
+};
+
 TEST_GROUP(C6502TestGroup) {
     C6502 c;
     uint8_t mem[0x10000];
 
-    C6502BusInterface bus = {
-        .ctx = mem,
-        .read = bus_read,
-        .write = bus_write,
-    };
-
     TEST_SETUP() {
         memset(&c, 0, sizeof(c));
         memset(mem, 0, sizeof(mem));
-        c.bus = &bus;
+        c.bus_interface = &bus;
+        c.bus_ctx = mem;
         // c6502_reset(&c);
         // c.cycles_remaining = 0;
     }

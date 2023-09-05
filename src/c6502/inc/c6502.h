@@ -4,9 +4,8 @@
 #include <stdint.h>
 
 typedef struct {
-    void *ctx;
-    uint8_t (*read)(void *ctx, uint16_t addr);
-    bool (*write)(void *ctx, uint16_t addr, uint8_t val);
+    uint8_t (*read)(void *bus_ctx, uint16_t addr);
+    bool (*write)(void *bus_ctx, uint16_t addr, uint8_t val);
 } C6502BusInterface;
 
 typedef struct {
@@ -32,7 +31,8 @@ typedef struct {
         };
     } SR;
 
-    const C6502BusInterface *bus;
+    void *bus_ctx;
+    const C6502BusInterface *bus_interface;
 } C6502;
 
 void c6502_reset(C6502 *);

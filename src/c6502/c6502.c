@@ -8,12 +8,12 @@ static const uint16_t IRQ_ADDR = 0xFFFE;
 
 /** read a byte from the bus at the specified address */
 static uint8_t read(const C6502 *const c, const uint16_t addr) {
-    return c->bus->read(c->bus->ctx, addr);
+    return c->bus_interface->read(c->bus_ctx, addr);
 }
 
 /** write a byte to the bus at the specified address */
 static bool write(const C6502 *const c, const uint16_t addr, const uint8_t val) {
-    return c->bus->write(c->bus->ctx, addr, val);
+    return c->bus_interface->write(c->bus_ctx, addr, val);
 }
 
 /** return true if there's a page-break between the given addresses */

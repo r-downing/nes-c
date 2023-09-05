@@ -28,7 +28,7 @@ static bool bus_write(void *, uint16_t addr, uint8_t val) {
 
 static const C6502BusInterface bus_interface = {.read = bus_read, .write = bus_write};
 
-C6502 c = {.bus = &bus_interface};
+C6502 c = {.bus_interface = &bus_interface};
 
 int main(int, char *[]) {
     FILE *const f = fopen("nestest.nes", "rb");
