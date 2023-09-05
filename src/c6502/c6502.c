@@ -109,7 +109,7 @@ static uint16_t AM_ABX(C6502 *const c, const Op *const op) {
     const uint16_t addr = read_u16_pc(c);
     const uint16_t ret = addr + c->X;
     if (op->page_break_extra_cycle && page_break(ret, addr)) {
-        c->cycles_remaining++;
+        c->current_op_cycles_remaining++;
     }
     return ret;
 }
@@ -119,7 +119,7 @@ static uint16_t AM_ABY(C6502 *const c, const Op *const op) {
     const uint16_t addr = read_u16_pc(c);
     const uint16_t ret = addr + c->Y;
     if (op->page_break_extra_cycle && page_break(ret, addr)) {
-        c->cycles_remaining++;
+        c->current_op_cycles_remaining++;
     }
     return ret;
 }
@@ -149,7 +149,7 @@ static uint16_t AM_INY(C6502 *const c, const Op *const op) {
     const uint16_t addr = (hi << 8) | lo;
     const uint16_t ret = addr + c->Y;
     if (op->page_break_extra_cycle && page_break(ret, addr)) {
-        c->cycles_remaining++;
+        c->current_op_cycles_remaining++;
     }
     return ret;
 }
@@ -197,9 +197,9 @@ static void branch_if(C6502 *const c, const bool cond) {
     if (!cond) {
         return;
     }
-    c->cycles_remaining++;
+    c->current_op_cycles_remaining++;
     if (page_break(c->PC, c->addr)) {
-        c->cycles_remaining++;
+        c->current_op_cycles_remaining++;
     }
     c->PC = c->addr;
 }
@@ -381,10 +381,7 @@ static void OP_LSR(C6502 *const c, const Op *const op) {
     }
 }
 
-static void OP_NOP(C6502 *const c, const Op *const op) {
-    if ((AM_IMP != op->address_mode_handler) && (AM_ACC != op->address_mode_handler)) {
-        read(c, c->addr);
-    }
+static void OP_NOP(C6502 *, const Op *) {
     // NOP
 }
 
@@ -845,19 +842,20 @@ static const Op optable[0x100] = {
 };
 
 bool c6202_cycle(C6502 *const c) {
-    if (0 == c->cycles_remaining) {
+    if (0 == c->current_op_cycles_remaining) {
         const Op *const op = &optable[read(c, c->PC++)];
         if ((NULL == op->address_mode_handler) || (NULL == op->op_handler)) {
             return false;
         }
         // ToDo: check op->cycles > 0
-        c->cycles_remaining = op->cycles;
+        c->current_op_cycles_remaining = op->cycles;
         c->addr = op->address_mode_handler(c, op);
         op->op_handler(c, op);
     }
-    c->cycles_remaining--;
+    c->current_op_cycles_remaining--;
+    c->total_cycles++;
 
-    return (0 == c->cycles_remaining);
+    return (0 == c->current_op_cycles_remaining);
 }
 
 int c6202_run_next_instruction(C6502 *const c) {
@@ -865,7 +863,7 @@ int c6202_run_next_instruction(C6502 *const c) {
     do {
         ret++;
         c6202_cycle(c);
-    } while (c->cycles_remaining);
+    } while (c->current_op_cycles_remaining);
     return ret;
 }
 
@@ -878,7 +876,7 @@ void c6502_reset(C6502 *const c) {
     c->AC = 0;
     c->X = 0;
     c->Y = 0;
-    c->cycles_remaining = 7;
+    c->current_op_cycles_remaining = 7;
 }
 
 void c6502_irq(C6502 *) {

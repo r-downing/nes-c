@@ -10,13 +10,14 @@ typedef struct {
 } C6502BusInterface;
 
 typedef struct {
-    uint8_t AC;                // accumulator
-    uint8_t X;                 // register
-    uint8_t Y;                 // register
-    uint8_t SP;                // stack pointer
-    uint16_t PC;               // program counter
-    uint16_t addr;             // current target address on bus
-    uint8_t cycles_remaining;  // cycles left on current op
+    uint8_t AC;                           // accumulator
+    uint8_t X;                            // register
+    uint8_t Y;                            // register
+    uint8_t SP;                           // stack pointer
+    uint16_t PC;                          // program counter
+    uint16_t addr;                        // current target address on bus
+    uint8_t current_op_cycles_remaining;  // cycles left on current op
+    uint32_t total_cycles;
     union __attribute__((__packed__)) {
         uint8_t u8;  // status register
         struct __attribute__((__packed__)) {
