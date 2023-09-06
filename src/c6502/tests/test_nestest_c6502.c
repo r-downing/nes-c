@@ -18,6 +18,7 @@ static uint8_t bus_read(void *ctx, uint16_t addr) {
 
 static bool bus_write(void *ctx, uint16_t addr, uint8_t val) {
     ((uint8_t *)ctx)[addr] = val;
+    return true;
 }
 
 static const C6502BusInterface bus_interface = {.read = bus_read, .write = bus_write};

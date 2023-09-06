@@ -5,6 +5,7 @@ static const uint16_t RESET_ADDR = 0xFFFC;
 static const uint8_t RESET_SP = 0xFD;
 static const uint16_t STACK_BASE = 0x100;
 static const uint16_t IRQ_ADDR = 0xFFFE;
+static const uint16_t NMI_ADDR = 0xFFFA;
 
 /** read a byte from the bus at the specified address */
 static uint8_t read(const C6502 *const c, const uint16_t addr) {
@@ -841,21 +842,53 @@ static const Op optable[0x100] = {
 
 };
 
-bool c6202_cycle(C6502 *const c) {
+static bool handle_nmi(C6502 *const c) {
+    c->nmi = false;
+    stack_push_u16(c, c->PC);
+    stack_push(c, c->SR.u8);
+    c->SR.I = 1;
+    c->PC = read_u16(c, NMI_ADDR);
+    c->current_op_cycles_remaining = 7;  // ToDo - confirm cycles
+    return true;
+}
+
+static bool handle_irq(C6502 *const c) {
+    c->irq = false;
+    if (0 != c->SR.I) {
+        return false;
+    }
+    stack_push_u16(c, c->PC);
+    stack_push(c, c->SR.u8);
+    c->SR.I = 1;
+    c->PC = read_u16(c, IRQ_ADDR);
+    c->current_op_cycles_remaining = 7;  // ToDo - confirm cycles
+    return true;
+}
+
+static void fetch_and_execute(C6502 *const c) {
+    if (c->nmi && handle_nmi(c)) {
+        return;
+    }
+    if (c->irq && handle_irq(c)) {
+        return;
+    }
+
+    const Op *const op = &optable[read(c, c->PC++)];
+    if ((NULL == op->address_mode_handler) || (NULL == op->op_handler)) {
+        return;
+    }
+    // ToDo: check op->cycles > 0
+    c->current_op_cycles_remaining = op->cycles;
+    c->addr = op->address_mode_handler(c, op);
+    op->op_handler(c, op);
+}
+
+void c6202_cycle(C6502 *const c) {
+    c->total_cycles++;
     if (0 == c->current_op_cycles_remaining) {
-        const Op *const op = &optable[read(c, c->PC++)];
-        if ((NULL == op->address_mode_handler) || (NULL == op->op_handler)) {
-            return false;
-        }
-        // ToDo: check op->cycles > 0
-        c->current_op_cycles_remaining = op->cycles;
-        c->addr = op->address_mode_handler(c, op);
-        op->op_handler(c, op);
+        fetch_and_execute(c);
     }
     c->current_op_cycles_remaining--;
-    c->total_cycles++;
-
-    return (0 == c->current_op_cycles_remaining);
 }
 
 int c6202_run_next_instruction(C6502 *const c) {
@@ -879,9 +912,9 @@ void c6502_reset(C6502 *const c) {
     c->current_op_cycles_remaining = 7;
 }
 
-void c6502_irq(C6502 *) {
-    // ToDO
+void c6502_irq(C6502 *c) {
+    c->irq = true;
 }
-void c6502_nmi(C6502 *) {
-    // ToDo
+void c6502_nmi(C6502 *c) {
+    c->nmi = true;
 }

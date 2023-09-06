@@ -9,6 +9,11 @@ typedef struct {
 } C6502BusInterface;
 
 typedef struct {
+    void *bus_ctx;
+    const C6502BusInterface *bus_interface;
+
+    // Private
+
     uint8_t AC;                           // accumulator
     uint8_t X;                            // register
     uint8_t Y;                            // register
@@ -17,6 +22,7 @@ typedef struct {
     uint16_t addr;                        // current target address on bus
     uint8_t current_op_cycles_remaining;  // cycles left on current op
     uint32_t total_cycles;
+
     union __attribute__((__packed__)) {
         uint8_t u8;  // status register
         struct __attribute__((__packed__)) {
@@ -31,14 +37,14 @@ typedef struct {
         };
     } SR;
 
-    void *bus_ctx;
-    const C6502BusInterface *bus_interface;
+    bool irq;  // irq triggered and yet to be serviced
+    bool nmi;  // nmi triggered and yet to be serviced
 } C6502;
 
 void c6502_reset(C6502 *);
 void c6502_irq(C6502 *);
 void c6502_nmi(C6502 *);
 
-bool c6202_cycle(C6502 *);
+void c6202_cycle(C6502 *);
 
 int c6202_run_next_instruction(C6502 *);
