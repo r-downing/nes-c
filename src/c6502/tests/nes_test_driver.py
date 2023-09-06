@@ -2,7 +2,7 @@ import re
 import subprocess
 import sys
 
-exe, nes_rom, nes_log = sys.argv[1:4]
+exe, nes_log = sys.argv[1:3]
 
 with open(nes_log, "rt") as fp:
     nes_log_lines = fp.readlines()
