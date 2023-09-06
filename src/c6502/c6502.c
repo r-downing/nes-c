@@ -842,35 +842,26 @@ static const Op optable[0x100] = {
 
 };
 
-static bool handle_nmi(C6502 *const c) {
-    c->nmi = false;
+static void handle_interrupt(C6502 *const c, uint16_t isr_addr) {
     stack_push_u16(c, c->PC);
     stack_push(c, c->SR.u8);
     c->SR.I = 1;
-    c->PC = read_u16(c, NMI_ADDR);
+    c->PC = read_u16(c, isr_addr);
     c->current_op_cycles_remaining = 7;  // ToDo - confirm cycles
-    return true;
-}
-
-static bool handle_irq(C6502 *const c) {
-    c->irq = false;
-    if (0 != c->SR.I) {
-        return false;
-    }
-    stack_push_u16(c, c->PC);
-    stack_push(c, c->SR.u8);
-    c->SR.I = 1;
-    c->PC = read_u16(c, IRQ_ADDR);
-    c->current_op_cycles_remaining = 7;  // ToDo - confirm cycles
-    return true;
 }
 
 static void fetch_and_execute(C6502 *const c) {
-    if (c->nmi && handle_nmi(c)) {
+    if (c->nmi) {
+        c->nmi = false;
+        handle_interrupt(c, NMI_ADDR);
         return;
     }
-    if (c->irq && handle_irq(c)) {
-        return;
+    if (c->irq) {
+        c->irq = false;
+        if (0 == c->SR.I) {
+            handle_interrupt(c, IRQ_ADDR);
+            return;
+        }
     }
 
     const Op *const op = &optable[read(c, c->PC++)];
@@ -913,7 +904,9 @@ void c6502_reset(C6502 *const c) {
 }
 
 void c6502_irq(C6502 *c) {
-    c->irq = true;
+    if (0 == c->SR.I) {
+        c->irq = true;
+    }
 }
 void c6502_nmi(C6502 *c) {
     c->nmi = true;

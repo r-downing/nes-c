@@ -10,9 +10,15 @@ typedef struct {
     uint8_t ram[0x800];
     NesCart cart;
     C6502 cpu;
+
+    int cpu_subcycle_count;
 } NesBus;
 
-void nes_bus_write(NesBus *, uint16_t addr, uint8_t val);
+bool nes_bus_write(NesBus *, uint16_t addr, uint8_t val);
 uint8_t nes_bus_read(NesBus *, uint16_t addr);
 
+void nes_bus_init(NesBus *const bus);
+
 void nes_bus_cycle(NesBus *);
+
+void nes_bus_reset(NesBus *);

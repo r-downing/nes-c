@@ -8,7 +8,7 @@ add_test(NAME test_c6502 COMMAND test_c6502)
 
 
 add_executable(test_nestest_c6502 tests/test_nestest_c6502.c)
-target_link_libraries(test_nestest_c6502 c6502)
+target_link_libraries(test_nestest_c6502 c6502 nes_cart nes_bus)
 
 file(COPY tests/nestest.nes DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 

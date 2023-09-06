@@ -18,7 +18,7 @@ typedef struct {
 
 } NesCart;
 
-void nes_cart_init(NesCart *);
+void nes_cart_init(NesCart *, const char *filename);
 
 void nes_cart_deinit(NesCart *);
 
