@@ -66,14 +66,15 @@ void nes_cart_init(NesCart *const cart, const char *const filename) {
 
     FILE *const f = fopen(filename, "rb");
     if (NULL == f) {
-        return false;
+        return;
     }
 
     RawCartridgeHeader header = {0};
     fread(&header, sizeof(header), 1, f);
 
     if (0 != memcmp(header_cookie, header.header_cookie, sizeof(header_cookie))) {
-        return false;
+        fclose(f);
+        return;
     }
 
     if (header.flags6.has_trainer) {
