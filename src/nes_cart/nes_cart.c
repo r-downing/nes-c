@@ -34,6 +34,7 @@ static bool mapper0_prg_read(NesCart *const mapper, uint16_t addr, uint8_t *cons
             return false;
         }
         *val_out = mapper->prg_ram[addr & ((0x2000 * mapper->num_prg_banks) - 1)];
+        return true;
     }
 
     *val_out = mapper->prg_rom[addr & ((mapper->num_prg_banks > 1) ? 0x7FFF : 0x3FFF)];
