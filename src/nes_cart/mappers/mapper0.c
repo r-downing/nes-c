@@ -1,43 +1,43 @@
 #include "../nes_cart_impl.h"
 
-static bool mapper0_prg_write(NesCart *const mapper, uint16_t addr, uint8_t val) {
+static bool mapper0_prg_write(NesCart *const cart, uint16_t addr, uint8_t val) {
     if (addr < 0x6000) {
         return false;
     }
     if (addr < 0x8000) {
-        if (NULL == mapper->prg_ram) {
+        if (NULL == cart->prg_ram) {
             // ToDo - warn accessing missing prg ram
             return false;
         }
-        mapper->prg_ram[addr & ((0x2000 * mapper->num_prg_banks) - 1)] = val;
+        cart->prg_ram[addr & ((0x2000 * cart->num_prg_banks) - 1)] = val;
     }
     // ToDo - warn writing prg mem
     return false;
     // &mapper->prg_rom[addr & ((mapper->num_prg_banks > 1) ? 0x7FFF : 0x3FFF)];
 }
 
-static bool mapper0_prg_read(NesCart *const mapper, uint16_t addr, uint8_t *const val_out) {
+static bool mapper0_prg_read(NesCart *const cart, uint16_t addr, uint8_t *const val_out) {
     if (addr < 0x6000) {
         return false;
     }
     if (addr < 0x8000) {
-        if (NULL == mapper->prg_ram) {
+        if (NULL == cart->prg_ram) {
             // ToDo - warn accessing missing prg ram
             return false;
         }
-        *val_out = mapper->prg_ram[addr & ((0x2000 * mapper->num_prg_banks) - 1)];
+        *val_out = cart->prg_ram[addr & ((0x2000 * cart->num_prg_banks) - 1)];
         return true;
     }
 
-    *val_out = mapper->prg_rom[addr & ((mapper->num_prg_banks > 1) ? 0x7FFF : 0x3FFF)];
+    *val_out = cart->prg_rom[addr & ((cart->num_prg_banks > 1) ? 0x7FFF : 0x3FFF)];
     return true;
 }
 
-static bool mapper0_chr_write(NesCart *const mapper, uint16_t addr, uint8_t val) {
+static bool mapper0_chr_write(NesCart *const cart, uint16_t addr, uint8_t val) {
     return false;  // Todo
 }
 
-static bool mapper0_chr_read(NesCart *const mapper, uint16_t addr, uint8_t *const val_out) {
+static bool mapper0_chr_read(NesCart *const cart, uint16_t addr, uint8_t *const val_out) {
     return false;  // Todo
 }
 
