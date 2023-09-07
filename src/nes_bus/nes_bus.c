@@ -13,7 +13,8 @@ bool nes_bus_write(NesBus *bus, uint16_t addr, uint8_t val) {
         return true;
     }
     if (addr < 0x4000) {
-        return true;  // addr & 0x7; ToDo: PPU
+        c2C02_write_reg(&bus->ppu, addr & 0x7, val);
+        return true;
     }
     if (addr < 0x4020) {
         return true;  // ToDo: APU and IO
@@ -30,7 +31,7 @@ uint8_t nes_bus_read(NesBus *bus, uint16_t addr) {
         return bus->ram[addr & 0x7FF];
     }
     if (addr < 0x4000) {
-        return 0;  // addr & 0x7; ToDo: PPU
+        return c2C02_read_reg(&bus->ppu, addr & 0x7);
     }
     if (addr < 0x4020) {
         return 0;  // ToDo: APU and IO
