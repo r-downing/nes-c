@@ -41,9 +41,19 @@ static bool mapper0_prg_read(NesCart *const mapper, uint16_t addr, uint8_t *cons
     return true;
 }
 
+static bool mapper0_chr_write(NesCart *const mapper, uint16_t addr, uint8_t val) {
+    return false;  // Todo
+}
+
+static bool mapper0_chr_read(NesCart *const mapper, uint16_t addr, uint8_t *const val_out) {
+    return false;  // Todo
+}
+
 static const MapperInterface mapper0 = {
     .prg_write = mapper0_prg_write,
     .prg_read = mapper0_prg_read,
+    .chr_write = mapper0_chr_write,
+    .chr_read = mapper0_chr_read,
 };
 
 ////// mapper 0
@@ -60,6 +70,13 @@ void nes_cart_deinit(NesCart *cart) {
     free((void *)cart->chr_rom);
     free((void *)cart->prg_rom);
     free(cart->prg_ram);
+}
+
+void nes_cart_reset(NesCart *cart) {
+    const MapperInterface *const mapper = (MapperInterface *)cart->_priv_intf;
+    if (mapper->reset) {
+        mapper->reset(cart);
+    }
 }
 
 void nes_cart_init(NesCart *const cart, const char *const filename) {
@@ -101,10 +118,18 @@ void nes_cart_init(NesCart *const cart, const char *const filename) {
     }
 }
 
-bool nes_cart_cpu_write(NesCart *mapper, uint16_t addr, uint8_t val) {
-    return ((MapperInterface *)mapper->_priv_intf)->prg_write(mapper, addr, val);
+bool nes_cart_prg_write(NesCart *cart, uint16_t addr, uint8_t val) {
+    return ((MapperInterface *)cart->_priv_intf)->prg_write(cart, addr, val);
 }
 
-bool nes_cart_cpu_read(NesCart *mapper, uint16_t addr, uint8_t *val_out) {
-    return ((MapperInterface *)mapper->_priv_intf)->prg_read(mapper, addr, val_out);
+bool nes_cart_prg_read(NesCart *cart, uint16_t addr, uint8_t *val_out) {
+    return ((MapperInterface *)cart->_priv_intf)->prg_read(cart, addr, val_out);
+}
+
+bool nes_cart_chr_write(NesCart *const cart, uint16_t addr, uint8_t val) {
+    return ((MapperInterface *)cart->_priv_intf)->chr_write(cart, addr, val);
+}
+
+bool nes_cart_chr_read(NesCart *const cart, uint16_t addr, uint8_t *val_out) {
+    return ((MapperInterface *)cart->_priv_intf)->chr_read(cart, addr, val_out);
 }

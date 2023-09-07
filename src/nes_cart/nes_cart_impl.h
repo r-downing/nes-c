@@ -7,8 +7,11 @@
 typedef struct {
     bool (*prg_write)(NesCart *, uint16_t addr, uint8_t val);
     bool (*prg_read)(NesCart *, uint16_t addr, uint8_t *val_out);
+    bool (*chr_write)(NesCart *, uint16_t addr, uint8_t val);
+    bool (*chr_read)(NesCart *, uint16_t addr, uint8_t *val_out);
     void (*init)(NesCart *);
     void (*deinit)(NesCart *);
+    void (*reset)(NesCart *);
 } MapperInterface;
 
 // https://www.nesdev.org/wiki/INES

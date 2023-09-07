@@ -5,7 +5,7 @@
 // https://www.nesdev.org/wiki/CPU_memory_map
 
 bool nes_bus_write(NesBus *bus, uint16_t addr, uint8_t val) {
-    if (nes_cart_cpu_write(&bus->cart, addr, val)) {
+    if (nes_cart_prg_write(&bus->cart, addr, val)) {
         return true;
     }
     if (addr < 0x2000) {
@@ -24,7 +24,7 @@ bool nes_bus_write(NesBus *bus, uint16_t addr, uint8_t val) {
 
 uint8_t nes_bus_read(NesBus *bus, uint16_t addr) {
     uint8_t val;
-    if (nes_cart_cpu_read(&bus->cart, addr, &val)) {
+    if (nes_cart_prg_read(&bus->cart, addr, &val)) {
         return val;
     }
     if (addr < 0x2000) {

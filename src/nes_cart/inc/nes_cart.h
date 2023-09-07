@@ -21,6 +21,10 @@ typedef struct {
 void nes_cart_init(NesCart *, const char *filename);
 
 void nes_cart_deinit(NesCart *);
+void nes_cart_reset(NesCart *);
 
-bool nes_cart_cpu_write(NesCart *, uint16_t addr, uint8_t val);
-bool nes_cart_cpu_read(NesCart *, uint16_t addr, uint8_t *val_out);
+bool nes_cart_prg_write(NesCart *, uint16_t addr, uint8_t val);
+bool nes_cart_prg_read(NesCart *, uint16_t addr, uint8_t *val_out);
+
+bool nes_cart_chr_write(NesCart *, uint16_t addr, uint8_t val);
+bool nes_cart_chr_read(NesCart *, uint16_t addr, uint8_t *val_out);
