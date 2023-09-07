@@ -1,5 +1,7 @@
 #pragma once
+#include <assert.h>
 #include <nes_cart.h>
+#include <stddef.h>
 #include <stdint.h>
 
 // https://www.nesdev.org/wiki/Mapper
