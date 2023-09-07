@@ -55,6 +55,7 @@ void nes_bus_cycle(NesBus *const bus) {
         bus->cpu_subcycle_count = 0;
         c6202_cycle(&bus->cpu);
     }
+    c2C02_cycle(&bus->ppu);
 }
 
 void nes_bus_reset(NesBus *const bus) {

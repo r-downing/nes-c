@@ -15,6 +15,7 @@ static const int TERMINATE_PC = 0x8000;
 NesBus bus;
 
 #define c (bus.cpu)
+#define p (bus.ppu)
 
 int main(int, char *[]) {
     nes_cart_init(&bus.cart, "nestest.nes");
@@ -34,8 +35,8 @@ int main(int, char *[]) {
         if (TERMINATE_PC == c.PC) {
             break;
         }
-        printf("%04X    A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%d\n", c.PC, c.AC, c.X, c.Y, c.SR.u8, c.SP,
-               c.total_cycles);
+        printf("%04X    A:%02X X:%02X Y:%02X P:%02X SP:%02X PPU:%d,%d CYC:%d\n", c.PC, c.AC, c.X, c.Y, c.SR.u8, c.SP,
+               p.scanlines, p.dots, c.total_cycles);
     }
     assert(MAX_CYCLE_TIMEOUT != i);
     assert(0 == mem[0x02]);

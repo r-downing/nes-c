@@ -15,7 +15,7 @@ output = sp.stdout.decode().strip().split("\n")
 assert len(output) == len(nes_log_lines), f"{len(output)} == {len(nes_log_lines)}"
 
 
-pattern = r"(?P<PC>[0-9A-F]{4}).* A:(?P<A>[0-9A-F]{2}) X:(?P<X>[0-9A-F]{2}) Y:(?P<Y>[0-9A-F]{2}) P:(?P<P>[0-9A-F]{2}) SP:(?P<SP>[0-9A-F]{2}).*CYC:(?P<CYC>[0-9]+)"
+pattern = r"(?P<PC>[0-9A-F]{4}).* A:(?P<A>[0-9A-F]{2}) X:(?P<X>[0-9A-F]{2}) Y:(?P<Y>[0-9A-F]{2}) P:(?P<P>[0-9A-F]{2}) SP:(?P<SP>[0-9A-F]{2}) PPU:\s*(?P<scanlines>[0-9]+),\s*(?P<dots>[0-9]+) CYC:(?P<CYC>[0-9]+)"
 
 for i, (line1, line2) in enumerate(zip(nes_log_lines, output)):
     m1 = re.match(pattern, line1)
