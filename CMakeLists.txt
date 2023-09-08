@@ -6,10 +6,6 @@ include(CTest)
 string(REGEX MATCH ".*/emcc" EMCC_DETECTED "${CMAKE_C_COMPILER}")
 
 
-add_compile_options(-Wall -Wextra)
-
-add_subdirectory(src)
-
 
 if(NOT EMCC_DETECTED)
     add_subdirectory(lib/cpputest)
@@ -18,3 +14,8 @@ if(NOT EMCC_DETECTED)
     endif()
     add_subdirectory(tests)
 endif()
+
+
+add_compile_options(-Wall -Wextra -Werror)
+
+add_subdirectory(src)
