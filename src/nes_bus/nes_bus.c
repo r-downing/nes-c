@@ -45,18 +45,48 @@ static const C6502BusInterface bus_interface = {
     .write = (bool (*)(void *, uint16_t, uint8_t))nes_bus_cpu_write,
 };
 
+// https://www.nesdev.org/wiki/PPU_memory_map
+
+uint8_t *vram_mirroring(NesBus *bus, uint16_t addr) {
+    const union __attribute__((__packed__)) {
+        uint16_t u16;
+        struct __attribute__((__packed__)) {
+            uint16_t addr : 10;
+            uint16_t v : 1;
+            uint16_t h : 1;
+            uint16_t : 4;
+        };
+    } mirror = {.u16 = addr};
+
+    if (NES_CART_MIRROR_HORIZONTAL == bus->cart.mirror_type) {
+        return &bus->vram[mirror.h][mirror.addr];
+    } else {
+        return &bus->vram[mirror.v][mirror.addr];
+    }
+}
+
 bool nes_bus_ppu_write(NesBus *bus, uint16_t addr, uint8_t val) {
-    (void)bus;
-    (void)addr;
-    (void)val;
+    if (nes_cart_ppu_write(&bus->cart, addr, val)) {
+        return true;  // probably CHR-rom or CHR-ram
+    }
+    if ((0x2000 <= addr) && (addr < 0x3000)) {
+        *vram_mirroring(bus, addr) = val;
+        return true;
+    }
     return false;  // Todo
 }
 
 uint8_t nes_bus_ppu_read(NesBus *bus, uint16_t addr) {
-    (void)bus;
-    (void)addr;
-    return 0;  // Todo
+    uint8_t val;
+    if (nes_cart_ppu_read(&bus->cart, addr, &val)) {
+        return val;  // probably CHR-rom or CHR-ram
+    }
+    if ((0x2000 <= addr) && (addr < 0x3000)) {
+        return *vram_mirroring(bus, addr);
+    }
+    return 0;  // should never get something < 0x3000
 }
+
 static const C2C02BusInterface ppu_bus_interface = {
     .read = (uint8_t(*)(void *, uint16_t))nes_bus_ppu_read,
     .write = (bool (*)(void *, uint16_t, uint8_t))nes_bus_ppu_write,

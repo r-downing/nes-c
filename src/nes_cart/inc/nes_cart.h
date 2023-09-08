@@ -3,6 +3,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+typedef enum {
+    NES_CART_MIRROR_HORIZONTAL = 0,
+    NES_CART_MIRROR_VERTICAL = 1,
+} NesCartMirrorType;
+
 typedef struct {
     uint8_t num_prg_banks;
     uint8_t num_chr_banks;
@@ -15,6 +20,8 @@ typedef struct {
 
     const void *_priv_intf;
     void *_priv_data;
+
+    NesCartMirrorType mirror_type;
 
 } NesCart;
 
