@@ -16,8 +16,8 @@ typedef struct {
     int cpu_subcycle_count;
 } NesBus;
 
-bool nes_bus_write(NesBus *, uint16_t addr, uint8_t val);
-uint8_t nes_bus_read(NesBus *, uint16_t addr);
+bool nes_bus_cpu_write(NesBus *, uint16_t addr, uint8_t val);
+uint8_t nes_bus_cpu_read(NesBus *, uint16_t addr);
 
 void nes_bus_init(NesBus *const bus);
 

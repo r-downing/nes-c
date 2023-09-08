@@ -33,17 +33,26 @@ static bool mapper0_prg_read(NesCart *const cart, uint16_t addr, uint8_t *const 
     return true;
 }
 
-static bool mapper0_chr_write(NesCart *const cart, uint16_t addr, uint8_t val) {
-    return false;  // Todo
+static bool mapper0_ppu_write(NesCart *const cart, uint16_t addr, uint8_t val) {
+    (void)cart;
+    (void)addr;
+    (void)val;
+    // Todo - chr-ram
+    return false;
 }
 
-static bool mapper0_chr_read(NesCart *const cart, uint16_t addr, uint8_t *const val_out) {
-    return false;  // Todo
+static bool mapper0_ppu_read(NesCart *const cart, uint16_t addr, uint8_t *const val_out) {
+    if (addr < 0x2000) {
+        *val_out = cart->chr_rom[addr];
+        return true;
+    }
+    // Todo - chr-ram
+    return false;
 }
 
 const MapperInterface mapper0 = {
     .prg_write = mapper0_prg_write,
     .prg_read = mapper0_prg_read,
-    .chr_write = mapper0_chr_write,
-    .chr_read = mapper0_chr_read,
+    .ppu_write = mapper0_ppu_write,
+    .ppu_read = mapper0_ppu_read,
 };

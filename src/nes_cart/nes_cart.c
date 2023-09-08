@@ -76,10 +76,10 @@ bool nes_cart_prg_read(NesCart *cart, uint16_t addr, uint8_t *val_out) {
     return ((MapperInterface *)cart->_priv_intf)->prg_read(cart, addr, val_out);
 }
 
-bool nes_cart_chr_write(NesCart *const cart, uint16_t addr, uint8_t val) {
-    return ((MapperInterface *)cart->_priv_intf)->chr_write(cart, addr, val);
+bool nes_cart_ppu_write(NesCart *const cart, uint16_t addr, uint8_t val) {
+    return ((MapperInterface *)cart->_priv_intf)->ppu_write(cart, addr, val);
 }
 
-bool nes_cart_chr_read(NesCart *const cart, uint16_t addr, uint8_t *val_out) {
-    return ((MapperInterface *)cart->_priv_intf)->chr_read(cart, addr, val_out);
+bool nes_cart_ppu_read(NesCart *const cart, uint16_t addr, uint8_t *val_out) {
+    return ((MapperInterface *)cart->_priv_intf)->ppu_read(cart, addr, val_out);
 }
