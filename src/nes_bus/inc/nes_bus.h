@@ -9,6 +9,8 @@
 
 typedef struct {
     uint8_t ram[0x800];
+    uint8_t vram[0x800];
+
     NesCart cart;
     C6502 cpu;
     C2C02 ppu;
