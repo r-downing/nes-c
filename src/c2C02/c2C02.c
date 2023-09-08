@@ -93,8 +93,14 @@ void c2C02_write_reg(C2C02 *const c, const uint8_t addr, const uint8_t val) {
             break;
         }
         case 0x1: {
-            // Todo
+            c->mask.u8 = val;
             break;
+        }
+        case 0x3: {
+            break;  // Todo OAM addr
+        }
+        case 0x4: {
+            break;  // Todo OAM data
         }
         case 0x5: {
             write_scroll_reg(c, val);
@@ -110,4 +116,8 @@ void c2C02_write_reg(C2C02 *const c, const uint8_t addr, const uint8_t val) {
             break;
         }
     }
+}
+
+void c2C02_dma() {
+    // Todo
 }

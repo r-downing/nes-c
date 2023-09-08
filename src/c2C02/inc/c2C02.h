@@ -67,6 +67,22 @@ typedef struct C2C02 {
         };
     } status;
 
+    union __attribute__((__packed__)) {
+        uint8_t u8;
+        struct __attribute__((__packed__)) {
+            uint8_t grayscale : 1;
+            // Show background in leftmost 8 pixels of screen
+            uint8_t background_left : 1;
+            // Show sprites in leftmost 8 pixels of screen
+            uint8_t sprites_left : 1;
+            uint8_t background : 1;
+            uint8_t sprites : 1;
+            uint8_t emphasize_red : 1;
+            uint8_t emphasize_green : 1;
+            uint8_t emphasize_blue : 1;
+        };
+    } mask;
+
     C2C02_loopy_register vram_address;
     C2C02_loopy_register temp_vram_address;
     uint8_t fine_x;
