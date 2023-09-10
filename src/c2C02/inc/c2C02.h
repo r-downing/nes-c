@@ -37,8 +37,8 @@ typedef struct C2C02 {
     void *bus_ctx;
 
     // private
-    int dots;
-    int scanlines;
+    int dot;
+    int scanline;
 
     bool address_latch;
 
@@ -75,8 +75,8 @@ typedef struct C2C02 {
             uint8_t background_left : 1;
             // Show sprites in leftmost 8 pixels of screen
             uint8_t sprites_left : 1;
-            uint8_t background : 1;
-            uint8_t sprites : 1;
+            uint8_t show_background : 1;
+            uint8_t show_sprites : 1;
             uint8_t emphasize_red : 1;
             uint8_t emphasize_green : 1;
             uint8_t emphasize_blue : 1;
@@ -88,6 +88,8 @@ typedef struct C2C02 {
     uint8_t fine_x;
 
     uint8_t palette_ram[0x20];
+
+    uint32_t frames;
 } C2C02;
 
 void c2C02_cycle(C2C02 *);

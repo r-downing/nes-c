@@ -36,7 +36,7 @@ int main(int, char *[]) {
             break;
         }
         printf("%04X    A:%02X X:%02X Y:%02X P:%02X SP:%02X PPU:%d,%d CYC:%d\n", c.PC, c.AC, c.X, c.Y, c.SR.u8, c.SP,
-               p.scanlines, p.dots, c.total_cycles);
+               p.scanline, p.dot, c.total_cycles);
     }
     assert(MAX_CYCLE_TIMEOUT != i);
     assert(0 == mem[0x02]);

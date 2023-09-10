@@ -24,17 +24,6 @@ static void bus_write(C2C02 *const c, uint16_t addr, uint8_t val) {
     c->bus->write(c->bus_ctx, addr, val);
 }
 
-void c2C02_cycle(C2C02 *const c) {
-    c->dots++;
-    if (c->dots >= 341) {
-        c->dots = 0;
-        c->scanlines++;
-        if (c->scanlines >= 261) {
-            c->scanlines = 0;
-        }
-    }
-}
-
 uint8_t c2C02_read_reg(C2C02 *const c, const uint8_t addr) {
     switch (addr & 0x7) {
         case 0x2: {  // status
@@ -120,4 +109,18 @@ void c2C02_write_reg(C2C02 *const c, const uint8_t addr, const uint8_t val) {
 
 void c2C02_dma() {
     // Todo
+}
+
+void c2C02_cycle(C2C02 *const c) {
+    // https://www.nesdev.org/w/images/default/d/d1/Ntsc_timing.png
+    c->dot++;
+    // Todo - if render enabled and odd frame and dot 339, scanline -1 --> dot++
+    if (c->dot > 340) {
+        c->dot = 0;
+        c->scanline++;
+        if (c->scanline > 260) {
+            c->scanline = -1;
+            c->frames++;
+        }
+    }
 }
