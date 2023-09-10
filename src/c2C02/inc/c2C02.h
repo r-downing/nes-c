@@ -27,6 +27,14 @@ typedef union __attribute__((__packed__)) {
         uint16_t fine_y : 3;
         uint16_t : 1;
     };
+    struct __attribute__((__packed__)) {
+        uint16_t : 2;
+        uint16_t coarse_x_attr : 3;  // high bits of coarse... maps to attr table
+        uint16_t : 2;
+        uint16_t coarse_y_attr : 3;
+        uint16_t : 6;
+    };
+
 } C2C02_loopy_register;
 
 typedef struct C2C02 {
@@ -35,6 +43,9 @@ typedef struct C2C02 {
 
     const C2C02BusInterface *bus;
     void *bus_ctx;
+
+    void (*draw_pixel)(void *draw_ctx, int x, int y, uint8_t r, uint8_t g, uint8_t b);
+    void *draw_ctx;
 
     // private
     int dot;
@@ -45,14 +56,17 @@ typedef struct C2C02 {
     union __attribute__((__packed__)) {
         uint8_t u8;
         struct __attribute__((__packed__)) {
-            uint8_t nametable_x : 1;
-            uint8_t nametable_y : 1;
+            uint8_t nametable_x : 1;  // base 0x2000, + 0x400
+            uint8_t nametable_y : 1;  // base 0x2000 + 0x800
 
             // VRAM address increment per CPU read/write of PPUDATA
             // (0: add 1, going across; 1: add 32, going down)
             uint8_t vram_inc : 1;
 
-            uint8_t : 4;  // Todo
+            uint8_t : 1;                           // Todo - sprite pattern table
+            uint8_t background_pattern_table : 1;  // 1: 0x1000
+            uint8_t : 1;                           // Todo - sprite size
+            uint8_t : 1;                           // Todo - ppu master/slave select
             uint8_t nmi_at_vblank : 1;
         };
     } ctrl;
