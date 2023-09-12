@@ -52,6 +52,7 @@ typedef struct C2C02 {
     int scanline;
 
     bool address_latch;
+    uint8_t data_read_buffer;
 
     union __attribute__((__packed__)) {
         uint8_t u8;

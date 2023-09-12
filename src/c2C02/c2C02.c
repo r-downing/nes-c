@@ -36,9 +36,15 @@ uint8_t c2C02_read_reg(C2C02 *const c, const uint8_t addr) {
             return 0;  // Todo - OAM addr
         case 0x4:
             return 0;  // Todo - OAM data
-        case 0x7:
-            (void)bus_read;  // Todo cleanup
-            return 0;        // Todo - PPU Data
+        case 0x7: {
+            uint8_t ret = c->data_read_buffer;
+            c->data_read_buffer = bus_read(c, c->vram_address.addr);
+            if (c->vram_address.addr >= 0x3F00) {
+                ret = c->data_read_buffer;  // reading from palette, no delay
+            }
+            c->vram_address.addr += (c->ctrl.vram_inc ? 31 : 1);
+            return ret;
+        }
         default:
             return 0;
     }
