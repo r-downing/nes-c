@@ -7,6 +7,7 @@ extern "C" {
 #include <string.h>
 }
 
+// Todo - switch to mock
 uint8_t bus_read(void *ctx, uint16_t addr) {
     return ((uint8_t *)ctx)[addr];
 }
@@ -42,18 +43,8 @@ TEST_GROUP(C6502TestGroup) {
 
 TEST(C6502TestGroup, test_reset) {
     c6502_reset(&c);
+    // Todo
 }
-
-// BRK IMP 7
-TEST(C6502TestGroup, test_0x00) {
-    // ToDo
-}
-
-// ORA INDX 6
-// TEST(C6502TestGroup, test_0x01) {}  // ToDo
-
-// ORA ZP 3
-// TEST(C6502TestGroup, test_0x05) {}  // ToDo
 
 // ASL ZP 5
 TEST(C6502TestGroup, test_0x06) {
@@ -80,12 +71,6 @@ TEST(C6502TestGroup, test_0x06) {
     CHECK_EQUAL(c.SR.Z, 1);
 }
 
-// PHP IMP 3
-// TEST(C6502TestGroup, test_0x08) {}  // ToDo
-
-// ORA IMM 2
-// TEST(C6502TestGroup, test_0x09) {}  // ToDo
-
 // ASL ACC 2
 TEST(C6502TestGroup, test_0x0A) {
     c.SR.u8 = 0;
@@ -99,9 +84,6 @@ TEST(C6502TestGroup, test_0x0A) {
     CHECK_EQUAL(c.SR.C, 1);
     CHECK_EQUAL(c.SR.Z, 0);
 }
-
-// ORA ABS 4
-// TEST(C6502TestGroup, test_0x0D) {}  // ToDo
 
 // ASL ABS 6
 TEST(C6502TestGroup, test_0x0E) {
@@ -204,247 +186,266 @@ TEST(C6502TestGroup, test_0x18) {
     CHECK_EQUAL(c.SR.u8, 0b11111110);
 }
 
+// Todo - remaining cpu tests
+// BRK IMP 7
+// TEST(C6502TestGroup, test_0x00) {}
+
+// ORA INDX 6
+// TEST(C6502TestGroup, test_0x01) {}
+
+// ORA ZP 3
+// TEST(C6502TestGroup, test_0x05) {}
+
+// PHP IMP 3
+// TEST(C6502TestGroup, test_0x08) {}
+
+// ORA IMM 2
+// TEST(C6502TestGroup, test_0x09) {}
+
+// ORA ABS 4
+// TEST(C6502TestGroup, test_0x0D) {}
+
 // ORA ABS Y 4'
-// TEST(C6502TestGroup, test_0x19) {}  // ToDo
+// TEST(C6502TestGroup, test_0x19) {}
 
 // ORA ABS X 4'
-// TEST(C6502TestGroup, test_0x1D) {}  // ToDo
+// TEST(C6502TestGroup, test_0x1D) {}
 
 // ASL ABS X 7
-// TEST(C6502TestGroup, test_0x1E) {}  // ToDo
+// TEST(C6502TestGroup, test_0x1E) {}
 
 // JSR ABS 6
-// TEST(C6502TestGroup, test_0x20) {}  // ToDo
+// TEST(C6502TestGroup, test_0x20) {}
 
 // AND INX 6
-// TEST(C6502TestGroup, test_0x21) {}  // ToDo
+// TEST(C6502TestGroup, test_0x21) {}
 
 // BIT ZP 3
-// TEST(C6502TestGroup, test_0x24) {}  // ToDo
+// TEST(C6502TestGroup, test_0x24) {}
 
 // AND ZP 3
-// TEST(C6502TestGroup, test_0x25) {}  // ToDo
+// TEST(C6502TestGroup, test_0x25) {}
 
 // ROL ZP 5
-// TEST(C6502TestGroup, test_0x26) {}  // ToDo
+// TEST(C6502TestGroup, test_0x26) {}
 
 // PLP IMP 4
-// TEST(C6502TestGroup, test_0x28) {}  // ToDo
+// TEST(C6502TestGroup, test_0x28) {}
 
 // AND IMM 2
-// TEST(C6502TestGroup, test_0x29) {}  // ToDo
+// TEST(C6502TestGroup, test_0x29) {}
 
 // ROL ACC 2
-// TEST(C6502TestGroup, test_0x2A) {}  // ToDo
+// TEST(C6502TestGroup, test_0x2A) {}
 
 // BIT ABS 4
-// TEST(C6502TestGroup, test_0x2C) {}  // ToDo
+// TEST(C6502TestGroup, test_0x2C) {}
 
 // AND ABS 4
-// TEST(C6502TestGroup, test_0x2D) {}  // ToDo
+// TEST(C6502TestGroup, test_0x2D) {}
 
 // ROL ABS 6
-// TEST(C6502TestGroup, test_0x2E) {}  // ToDo
+// TEST(C6502TestGroup, test_0x2E) {}
 
 // BMI REL 2''
-// TEST(C6502TestGroup, test_0x30) {}  // ToDo
+// TEST(C6502TestGroup, test_0x30) {}
 
 // AND INY 5'
-// TEST(C6502TestGroup, test_0x31) {}  // ToDo
+// TEST(C6502TestGroup, test_0x31) {}
 
 // AND ZPX 4
-// TEST(C6502TestGroup, test_0x35) {}  // ToDo
+// TEST(C6502TestGroup, test_0x35) {}
 
 // ROL ZPX 6
-// TEST(C6502TestGroup, test_0x36) {}  // ToDo
+// TEST(C6502TestGroup, test_0x36) {}
 
 // SEC IMP 2
-// TEST(C6502TestGroup, test_0x38) {}  // ToDo
+// TEST(C6502TestGroup, test_0x38) {}
 
 // AND ABY 4'
-// TEST(C6502TestGroup, test_0x39) {}  // ToDo
-// TEST(C6502TestGroup, test_0x3A) {}  // ToDo
+// TEST(C6502TestGroup, test_0x39) {}
+// TEST(C6502TestGroup, test_0x3A) {}
 
-// TEST(C6502TestGroup, test_0x3C) {}  // ToDo
-// TEST(C6502TestGroup, test_0x3D) {}  // ToDo
-// TEST(C6502TestGroup, test_0x3E) {}  // ToDo
+// TEST(C6502TestGroup, test_0x3C) {}
+// TEST(C6502TestGroup, test_0x3D) {}
+// TEST(C6502TestGroup, test_0x3E) {}
 
-// TEST(C6502TestGroup, test_0x40) {}  // ToDo
-// TEST(C6502TestGroup, test_0x41) {}  // ToDo
+// TEST(C6502TestGroup, test_0x40) {}
+// TEST(C6502TestGroup, test_0x41) {}
 
-// TEST(C6502TestGroup, test_0x44) {}  // ToDo
-// TEST(C6502TestGroup, test_0x45) {}  // ToDo
-// TEST(C6502TestGroup, test_0x46) {}  // ToDo
+// TEST(C6502TestGroup, test_0x44) {}
+// TEST(C6502TestGroup, test_0x45) {}
+// TEST(C6502TestGroup, test_0x46) {}
 
-// TEST(C6502TestGroup, test_0x48) {}  // ToDo
-// TEST(C6502TestGroup, test_0x49) {}  // ToDo
-// TEST(C6502TestGroup, test_0x4A) {}  // ToDo
+// TEST(C6502TestGroup, test_0x48) {}
+// TEST(C6502TestGroup, test_0x49) {}
+// TEST(C6502TestGroup, test_0x4A) {}
 
-// TEST(C6502TestGroup, test_0x4C) {}  // ToDo
-// TEST(C6502TestGroup, test_0x4D) {}  // ToDo
-// TEST(C6502TestGroup, test_0x4E) {}  // ToDo
+// TEST(C6502TestGroup, test_0x4C) {}
+// TEST(C6502TestGroup, test_0x4D) {}
+// TEST(C6502TestGroup, test_0x4E) {}
 
-// TEST(C6502TestGroup, test_0x50) {}  // ToDo
-// TEST(C6502TestGroup, test_0x51) {}  // ToDo
+// TEST(C6502TestGroup, test_0x50) {}
+// TEST(C6502TestGroup, test_0x51) {}
 
-// TEST(C6502TestGroup, test_0x54) {}  // ToDo
-// TEST(C6502TestGroup, test_0x55) {}  // ToDo
-// TEST(C6502TestGroup, test_0x56) {}  // ToDo
+// TEST(C6502TestGroup, test_0x54) {}
+// TEST(C6502TestGroup, test_0x55) {}
+// TEST(C6502TestGroup, test_0x56) {}
 
-// TEST(C6502TestGroup, test_0x58) {}  // ToDo
-// TEST(C6502TestGroup, test_0x59) {}  // ToDo
-// TEST(C6502TestGroup, test_0x5A) {}  // ToDo
+// TEST(C6502TestGroup, test_0x58) {}
+// TEST(C6502TestGroup, test_0x59) {}
+// TEST(C6502TestGroup, test_0x5A) {}
 
-// TEST(C6502TestGroup, test_0x5C) {}  // ToDo
-// TEST(C6502TestGroup, test_0x5D) {}  // ToDo
-// TEST(C6502TestGroup, test_0x5E) {}  // ToDo
+// TEST(C6502TestGroup, test_0x5C) {}
+// TEST(C6502TestGroup, test_0x5D) {}
+// TEST(C6502TestGroup, test_0x5E) {}
 
-// TEST(C6502TestGroup, test_0x60) {}  // ToDo
-// TEST(C6502TestGroup, test_0x61) {}  // ToDo
+// TEST(C6502TestGroup, test_0x60) {}
+// TEST(C6502TestGroup, test_0x61) {}
 
-// TEST(C6502TestGroup, test_0x64) {}  // ToDo
-// TEST(C6502TestGroup, test_0x65) {}  // ToDo
-// TEST(C6502TestGroup, test_0x66) {}  // ToDo
+// TEST(C6502TestGroup, test_0x64) {}
+// TEST(C6502TestGroup, test_0x65) {}
+// TEST(C6502TestGroup, test_0x66) {}
 
-// TEST(C6502TestGroup, test_0x68) {}  // ToDo
-// TEST(C6502TestGroup, test_0x69) {}  // ToDo
-// TEST(C6502TestGroup, test_0x6A) {}  // ToDo
+// TEST(C6502TestGroup, test_0x68) {}
+// TEST(C6502TestGroup, test_0x69) {}
+// TEST(C6502TestGroup, test_0x6A) {}
 
-// TEST(C6502TestGroup, test_0x6C) {}  // ToDo
-// TEST(C6502TestGroup, test_0x6D) {}  // ToDo
-// TEST(C6502TestGroup, test_0x6E) {}  // ToDo
+// TEST(C6502TestGroup, test_0x6C) {}
+// TEST(C6502TestGroup, test_0x6D) {}
+// TEST(C6502TestGroup, test_0x6E) {}
 
-// TEST(C6502TestGroup, test_0x70) {}  // ToDo
-// TEST(C6502TestGroup, test_0x71) {}  // ToDo
+// TEST(C6502TestGroup, test_0x70) {}
+// TEST(C6502TestGroup, test_0x71) {}
 
-// TEST(C6502TestGroup, test_0x74) {}  // ToDo
-// TEST(C6502TestGroup, test_0x75) {}  // ToDo
-// TEST(C6502TestGroup, test_0x76) {}  // ToDo
+// TEST(C6502TestGroup, test_0x74) {}
+// TEST(C6502TestGroup, test_0x75) {}
+// TEST(C6502TestGroup, test_0x76) {}
 
-// TEST(C6502TestGroup, test_0x78) {}  // ToDo
-// TEST(C6502TestGroup, test_0x79) {}  // ToDo
-// TEST(C6502TestGroup, test_0x7A) {}  // ToDo
+// TEST(C6502TestGroup, test_0x78) {}
+// TEST(C6502TestGroup, test_0x79) {}
+// TEST(C6502TestGroup, test_0x7A) {}
 
-// TEST(C6502TestGroup, test_0x7C) {}  // ToDo
-// TEST(C6502TestGroup, test_0x7D) {}  // ToDo
-// TEST(C6502TestGroup, test_0x7E) {}  // ToDo
+// TEST(C6502TestGroup, test_0x7C) {}
+// TEST(C6502TestGroup, test_0x7D) {}
+// TEST(C6502TestGroup, test_0x7E) {}
 
-// TEST(C6502TestGroup, test_0x81) {}  // ToDo
+// TEST(C6502TestGroup, test_0x81) {}
 
-// TEST(C6502TestGroup, test_0x84) {}  // ToDo
-// TEST(C6502TestGroup, test_0x85) {}  // ToDo
-// TEST(C6502TestGroup, test_0x86) {}  // ToDo
+// TEST(C6502TestGroup, test_0x84) {}
+// TEST(C6502TestGroup, test_0x85) {}
+// TEST(C6502TestGroup, test_0x86) {}
 
-// TEST(C6502TestGroup, test_0x88) {}  // ToDo
-// TEST(C6502TestGroup, test_0x89) {}  // ToDo
-// TEST(C6502TestGroup, test_0x8A) {}  // ToDo
+// TEST(C6502TestGroup, test_0x88) {}
+// TEST(C6502TestGroup, test_0x89) {}
+// TEST(C6502TestGroup, test_0x8A) {}
 
-// TEST(C6502TestGroup, test_0x8C) {}  // ToDo
-// TEST(C6502TestGroup, test_0x8D) {}  // ToDo
-// TEST(C6502TestGroup, test_0x8E) {}  // ToDo
+// TEST(C6502TestGroup, test_0x8C) {}
+// TEST(C6502TestGroup, test_0x8D) {}
+// TEST(C6502TestGroup, test_0x8E) {}
 
-// TEST(C6502TestGroup, test_0x90) {}  // ToDo
-// TEST(C6502TestGroup, test_0x91) {}  // ToDo
+// TEST(C6502TestGroup, test_0x90) {}
+// TEST(C6502TestGroup, test_0x91) {}
 
-// TEST(C6502TestGroup, test_0x94) {}  // ToDo
-// TEST(C6502TestGroup, test_0x95) {}  // ToDo
-// TEST(C6502TestGroup, test_0x96) {}  // ToDo
+// TEST(C6502TestGroup, test_0x94) {}
+// TEST(C6502TestGroup, test_0x95) {}
+// TEST(C6502TestGroup, test_0x96) {}
 
-// TEST(C6502TestGroup, test_0x98) {}  // ToDo
-// TEST(C6502TestGroup, test_0x99) {}  // ToDo
-// TEST(C6502TestGroup, test_0x9A) {}  // ToDo
+// TEST(C6502TestGroup, test_0x98) {}
+// TEST(C6502TestGroup, test_0x99) {}
+// TEST(C6502TestGroup, test_0x9A) {}
 
-// TEST(C6502TestGroup, test_0x9C) {}  // ToDo
-// TEST(C6502TestGroup, test_0x9D) {}  // ToDo
-// TEST(C6502TestGroup, test_0x9E) {}  // ToDo
+// TEST(C6502TestGroup, test_0x9C) {}
+// TEST(C6502TestGroup, test_0x9D) {}
+// TEST(C6502TestGroup, test_0x9E) {}
 
-// TEST(C6502TestGroup, test_0xA0) {}  // ToDo
-// TEST(C6502TestGroup, test_0xA1) {}  // ToDo
-// TEST(C6502TestGroup, test_0xA2) {}  // ToDo
+// TEST(C6502TestGroup, test_0xA0) {}
+// TEST(C6502TestGroup, test_0xA1) {}
+// TEST(C6502TestGroup, test_0xA2) {}
 
-// TEST(C6502TestGroup, test_0xA4) {}  // ToDo
-// TEST(C6502TestGroup, test_0xA5) {}  // ToDo
-// TEST(C6502TestGroup, test_0xA6) {}  // ToDo
+// TEST(C6502TestGroup, test_0xA4) {}
+// TEST(C6502TestGroup, test_0xA5) {}
+// TEST(C6502TestGroup, test_0xA6) {}
 
-// TEST(C6502TestGroup, test_0xA8) {}  // ToDo
-// TEST(C6502TestGroup, test_0xA9) {}  // ToDo
-// TEST(C6502TestGroup, test_0xAA) {}  // ToDo
+// TEST(C6502TestGroup, test_0xA8) {}
+// TEST(C6502TestGroup, test_0xA9) {}
+// TEST(C6502TestGroup, test_0xAA) {}
 
-// TEST(C6502TestGroup, test_0xAC) {}  // ToDo
-// TEST(C6502TestGroup, test_0xAD) {}  // ToDo
-// TEST(C6502TestGroup, test_0xAE) {}  // ToDo
+// TEST(C6502TestGroup, test_0xAC) {}
+// TEST(C6502TestGroup, test_0xAD) {}
+// TEST(C6502TestGroup, test_0xAE) {}
 
-// TEST(C6502TestGroup, test_0xB0) {}  // ToDo
-// TEST(C6502TestGroup, test_0xB1) {}  // ToDo
+// TEST(C6502TestGroup, test_0xB0) {}
+// TEST(C6502TestGroup, test_0xB1) {}
 
-// TEST(C6502TestGroup, test_0xB4) {}  // ToDo
-// TEST(C6502TestGroup, test_0xB5) {}  // ToDo
-// TEST(C6502TestGroup, test_0xB6) {}  // ToDo
+// TEST(C6502TestGroup, test_0xB4) {}
+// TEST(C6502TestGroup, test_0xB5) {}
+// TEST(C6502TestGroup, test_0xB6) {}
 
-// TEST(C6502TestGroup, test_0xB8) {}  // ToDo
-// TEST(C6502TestGroup, test_0xB9) {}  // ToDo
-// TEST(C6502TestGroup, test_0xBA) {}  // ToDo
+// TEST(C6502TestGroup, test_0xB8) {}
+// TEST(C6502TestGroup, test_0xB9) {}
+// TEST(C6502TestGroup, test_0xBA) {}
 
-// TEST(C6502TestGroup, test_0xBC) {}  // ToDo
-// TEST(C6502TestGroup, test_0xBD) {}  // ToDo
-// TEST(C6502TestGroup, test_0xBE) {}  // ToDo
+// TEST(C6502TestGroup, test_0xBC) {}
+// TEST(C6502TestGroup, test_0xBD) {}
+// TEST(C6502TestGroup, test_0xBE) {}
 
-// TEST(C6502TestGroup, test_0xC0) {}  // ToDo
-// TEST(C6502TestGroup, test_0xC1) {}  // ToDo
+// TEST(C6502TestGroup, test_0xC0) {}
+// TEST(C6502TestGroup, test_0xC1) {}
 
-// TEST(C6502TestGroup, test_0xC4) {}  // ToDo
-// TEST(C6502TestGroup, test_0xC5) {}  // ToDo
-// TEST(C6502TestGroup, test_0xC6) {}  // ToDo
+// TEST(C6502TestGroup, test_0xC4) {}
+// TEST(C6502TestGroup, test_0xC5) {}
+// TEST(C6502TestGroup, test_0xC6) {}
 
-// TEST(C6502TestGroup, test_0xC8) {}  // ToDo
-// TEST(C6502TestGroup, test_0xC9) {}  // ToDo
-// TEST(C6502TestGroup, test_0xCA) {}  // ToDo
+// TEST(C6502TestGroup, test_0xC8) {}
+// TEST(C6502TestGroup, test_0xC9) {}
+// TEST(C6502TestGroup, test_0xCA) {}
 
-// TEST(C6502TestGroup, test_0xCC) {}  // ToDo
-// TEST(C6502TestGroup, test_0xCD) {}  // ToDo
-// TEST(C6502TestGroup, test_0xCE) {}  // ToDo
+// TEST(C6502TestGroup, test_0xCC) {}
+// TEST(C6502TestGroup, test_0xCD) {}
+// TEST(C6502TestGroup, test_0xCE) {}
 
-// TEST(C6502TestGroup, test_0xD0) {}  // ToDo
-// TEST(C6502TestGroup, test_0xD1) {}  // ToDo
+// TEST(C6502TestGroup, test_0xD0) {}
+// TEST(C6502TestGroup, test_0xD1) {}
 
-// TEST(C6502TestGroup, test_0xD4) {}  // ToDo
-// TEST(C6502TestGroup, test_0xD5) {}  // ToDo
-// TEST(C6502TestGroup, test_0xD6) {}  // ToDo
+// TEST(C6502TestGroup, test_0xD4) {}
+// TEST(C6502TestGroup, test_0xD5) {}
+// TEST(C6502TestGroup, test_0xD6) {}
 
-// TEST(C6502TestGroup, test_0xD8) {}  // ToDo
-// TEST(C6502TestGroup, test_0xD9) {}  // ToDo
-// TEST(C6502TestGroup, test_0xDA) {}  // ToDo
+// TEST(C6502TestGroup, test_0xD8) {}
+// TEST(C6502TestGroup, test_0xD9) {}
+// TEST(C6502TestGroup, test_0xDA) {}
 
-// TEST(C6502TestGroup, test_0xDC) {}  // ToDo
-// TEST(C6502TestGroup, test_0xDD) {}  // ToDo
-// TEST(C6502TestGroup, test_0xDE) {}  // ToDo
+// TEST(C6502TestGroup, test_0xDC) {}
+// TEST(C6502TestGroup, test_0xDD) {}
+// TEST(C6502TestGroup, test_0xDE) {}
 
-// TEST(C6502TestGroup, test_0xE0) {}  // ToDo
-// TEST(C6502TestGroup, test_0xE1) {}  // ToDo
+// TEST(C6502TestGroup, test_0xE0) {}
+// TEST(C6502TestGroup, test_0xE1) {}
 
-// TEST(C6502TestGroup, test_0xE4) {}  // ToDo
-// TEST(C6502TestGroup, test_0xE5) {}  // ToDo
-// TEST(C6502TestGroup, test_0xE6) {}  // ToDo
+// TEST(C6502TestGroup, test_0xE4) {}
+// TEST(C6502TestGroup, test_0xE5) {}
+// TEST(C6502TestGroup, test_0xE6) {}
 
-// TEST(C6502TestGroup, test_0xE8) {}  // ToDo
-// TEST(C6502TestGroup, test_0xE9) {}  // ToDo
-// TEST(C6502TestGroup, test_0xEA) {}  // ToDo
+// TEST(C6502TestGroup, test_0xE8) {}
+// TEST(C6502TestGroup, test_0xE9) {}
+// TEST(C6502TestGroup, test_0xEA) {}
 
-// TEST(C6502TestGroup, test_0xEC) {}  // ToDo
-// TEST(C6502TestGroup, test_0xED) {}  // ToDo
-// TEST(C6502TestGroup, test_0xEE) {}  // ToDo
+// TEST(C6502TestGroup, test_0xEC) {}
+// TEST(C6502TestGroup, test_0xED) {}
+// TEST(C6502TestGroup, test_0xEE) {}
 
-// TEST(C6502TestGroup, test_0xF0) {}  // ToDo
-// TEST(C6502TestGroup, test_0xF1) {}  // ToDo
+// TEST(C6502TestGroup, test_0xF0) {}
+// TEST(C6502TestGroup, test_0xF1) {}
 
-// TEST(C6502TestGroup, test_0xF4) {}  // ToDo
-// TEST(C6502TestGroup, test_0xF5) {}  // ToDo
-// TEST(C6502TestGroup, test_0xF6) {}  // ToDo
+// TEST(C6502TestGroup, test_0xF4) {}
+// TEST(C6502TestGroup, test_0xF5) {}
+// TEST(C6502TestGroup, test_0xF6) {}
 
-// TEST(C6502TestGroup, test_0xF8) {}  // ToDo
-// TEST(C6502TestGroup, test_0xF9) {}  // ToDo
-// TEST(C6502TestGroup, test_0xFA) {}  // ToDo
+// TEST(C6502TestGroup, test_0xF8) {}
+// TEST(C6502TestGroup, test_0xF9) {}
+// TEST(C6502TestGroup, test_0xFA) {}
 
-// TEST(C6502TestGroup, test_0xFC) {}  // ToDo
-// TEST(C6502TestGroup, test_0xFD) {}  // ToDo
-// TEST(C6502TestGroup, test_0xFE) {}  // ToDo
+// TEST(C6502TestGroup, test_0xFC) {}
+// TEST(C6502TestGroup, test_0xFD) {}
+// TEST(C6502TestGroup, test_0xFE) {}
