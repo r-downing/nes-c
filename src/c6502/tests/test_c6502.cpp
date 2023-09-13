@@ -7,66 +7,78 @@ extern "C" {
 #include <string.h>
 }
 
-// Todo - switch to mock
-uint8_t bus_read(void *ctx, uint16_t addr) {
-    return ((uint8_t *)ctx)[addr];
+static uint8_t mock_bus_read(void *, uint16_t addr) {
+    return mock().actualCall(__func__).withParameter("addr", addr).returnUnsignedIntValueOrDefault(0);
 }
 
-bool bus_write(void *ctx, uint16_t addr, uint8_t val) {
-    ((uint8_t *)ctx)[addr] = val;
-    return true;
+static bool mock_bus_write(void *, uint16_t addr, uint8_t val) {
+    return mock()
+        .actualCall(__func__)
+        .withParameter("addr", addr)
+        .withParameter("val", val)
+        .returnBoolValueOrDefault(false);
 }
 
-static const C6502BusInterface bus = {
-    .read = bus_read,
-    .write = bus_write,
+static C6502BusInterface bus = {
+    .read = mock_bus_read,
+    .write = mock_bus_write,
 };
+
+namespace mock_bus {
+void expect_read(uint16_t addr, uint8_t ret) {
+    mock().expectOneCall("mock_bus_read").withParameter("addr", addr).andReturnValue(ret);
+}
+void expect_write(uint16_t addr, uint8_t val, bool ret) {
+    mock().expectOneCall("mock_bus_write").withParameter("addr", addr).withParameter("val", val).andReturnValue(ret);
+}
+}  // namespace mock_bus
 
 TEST_GROUP(C6502TestGroup) {
     C6502 c;
-    uint8_t mem[0x10000];
 
     TEST_SETUP() {
         memset(&c, 0, sizeof(c));
-        memset(mem, 0, sizeof(mem));
         c.bus_interface = &bus;
-        c.bus_ctx = mem;
         // c6502_reset(&c);
         // c.cycles_remaining = 0;
     }
 
     TEST_TEARDOWN() {
-        // mock().checkExpectations();
-        // mock().clear();
+        mock().checkExpectations();
+        mock().clear();
     }
 };
 
 TEST(C6502TestGroup, test_reset) {
+    mock_bus::expect_read(0xFFFC, 0x12);
+    mock_bus::expect_read(0xFFFD, 0x13);
     c6502_reset(&c);
-    // Todo
+    CHECK_EQUAL(0x1312, c.PC);
+
+    // Todo - check rest of reset stuff
 }
 
 // ASL ZP 5
 TEST(C6502TestGroup, test_0x06) {
     c.SR.u8 = 0;
     c.PC = 123;
-    mem[123] = 0x06;
-    mem[124] = 51;
-    mem[51] = 0b01001111;
+    mock_bus::expect_read(123, 0x06);
+    mock_bus::expect_read(124, 51);
+    mock_bus::expect_read(51, 0b01001111);
+    mock_bus::expect_write(51, 0b10011110, true);
     CHECK_EQUAL(5, c6202_run_next_instruction(&c));
     CHECK_EQUAL(c.SR.C, 0);
-    CHECK_EQUAL(mem[51], 0b10011110);
     CHECK_EQUAL(c.SR.N, 1);
     CHECK_EQUAL(c.SR.Z, 0);
 
     c.SR.u8 = 0;
     c.PC = 123;
-    mem[123] = 0x06;
-    mem[124] = 51;
-    mem[51] = 0b10000000;
+    mock_bus::expect_read(123, 0x06);
+    mock_bus::expect_read(124, 51);
+    mock_bus::expect_read(51, 0b10000000);
+    mock_bus::expect_write(51, 0, true);
     CHECK_EQUAL(5, c6202_run_next_instruction(&c));
     CHECK_EQUAL(c.SR.C, 1);
-    CHECK_EQUAL(mem[51], 0);
     CHECK_EQUAL(c.SR.N, 0);
     CHECK_EQUAL(c.SR.Z, 1);
 }
@@ -75,7 +87,7 @@ TEST(C6502TestGroup, test_0x06) {
 TEST(C6502TestGroup, test_0x0A) {
     c.SR.u8 = 0;
     c.PC = 900;
-    mem[900] = 0x0A;
+    mock_bus::expect_read(900, 0x0A);
     c.AC = 0b10000001;
     CHECK_EQUAL(2, c6202_run_next_instruction(&c));
     CHECK_EQUAL(c.AC, 0b00000010);
@@ -88,34 +100,35 @@ TEST(C6502TestGroup, test_0x0A) {
 // ASL ABS 6
 TEST(C6502TestGroup, test_0x0E) {
     c.PC = 2000;
-    mem[2000] = 0x0E;
-    mem[2001] = 0x34;
-    mem[2002] = 0x12;
-    mem[0x1234] = 0b01010101;
+    mock_bus::expect_read(2000, 0x0E);
+    mock_bus::expect_read(2001, 0x34);
+    mock_bus::expect_read(2002, 0x12);
+    mock_bus::expect_read(0x1234, 0b01010101);
+    mock_bus::expect_write(0x1234, 0b10101010, true);
     CHECK_EQUAL(6, c6202_run_next_instruction(&c));
     CHECK_EQUAL(c.PC, 2003);
-    CHECK_EQUAL(mem[0x1234], 0b10101010);
 }
 
 // BPL REL 2''
 TEST(C6502TestGroup, test_0x10) {
     c.PC = 2000;
-    mem[2000] = 0x10;
-    mem[2001] = 124;
+    mock_bus::expect_read(2000, 0x10);
+    mock_bus::expect_read(2001, 124);
+
     c.SR.N = 0;
     CHECK_EQUAL(4, c6202_run_next_instruction(&c));
     CHECK_EQUAL(c.PC, 2126);
 
     c.PC = 2000;
-    mem[2000] = 0x10;
-    mem[2001] = -124;
+    mock_bus::expect_read(2000, 0x10);
+    mock_bus::expect_read(2001, -124);
     c.SR.N = 0;
     CHECK_EQUAL(3, c6202_run_next_instruction(&c));
     CHECK_EQUAL(c.PC, 2000 - 122);
 
     c.PC = 2000;
-    mem[2000] = 0x10;
-    mem[2001] = -124;
+    mock_bus::expect_read(2000, 0x10);
+    mock_bus::expect_read(2001, -124);
     c.SR.N = 1;
     CHECK_EQUAL(2, c6202_run_next_instruction(&c));
     CHECK_EQUAL(c.PC, 2002);
@@ -124,12 +137,13 @@ TEST(C6502TestGroup, test_0x10) {
 // ORA INY 5'
 TEST(C6502TestGroup, test_0x11) {
     c.PC = 500;
-    mem[500] = 0x11;
-    mem[501] = 34;
-    mem[34] = 0x12;
-    mem[35] = 0x34;
     c.Y = 0x22;
-    mem[0x3434] = 0b11001100;
+    mock_bus::expect_read(500, 0x11);
+    mock_bus::expect_read(501, 34);
+    mock_bus::expect_read(34, 0x12);
+    mock_bus::expect_read(35, 0x34);
+    mock_bus::expect_read(0x3434, 0b11001100);
+
     c.AC = 0b00000001;
     CHECK_EQUAL(5, c6202_run_next_instruction(&c));
     CHECK_EQUAL(c.AC, 0b11001101);
@@ -137,12 +151,12 @@ TEST(C6502TestGroup, test_0x11) {
     CHECK_EQUAL(c.SR.N, 1);
 
     c.PC = 500;
-    mem[500] = 0x11;
-    mem[501] = 34;
-    mem[34] = 0x12;
-    mem[35] = 0x34;
     c.Y = 0xF0;
-    mem[0x3502] = 0b10;
+    mock_bus::expect_read(500, 0x11);
+    mock_bus::expect_read(501, 34);
+    mock_bus::expect_read(34, 0x12);
+    mock_bus::expect_read(35, 0x34);
+    mock_bus::expect_read(0x3502, 0b10);
     c.AC = 0b1;
     CHECK_EQUAL(6, c6202_run_next_instruction(&c));
     CHECK_EQUAL(c.AC, 0b11);
@@ -153,9 +167,9 @@ TEST(C6502TestGroup, test_0x11) {
 // ORA ZPX 4
 TEST(C6502TestGroup, test_0x15) {
     c.PC = 800;
-    mem[800] = 0x15;
-    mem[801] = 0x30;
-    mem[0x30] = 0b1010;
+    mock_bus::expect_read(800, 0x15);
+    mock_bus::expect_read(801, 0x30);
+    mock_bus::expect_read(0x30, 0b1010);
     c.AC = 0b1001;
     CHECK_EQUAL(4, c6202_run_next_instruction(&c));
     CHECK_EQUAL(c.AC, 0b1011);
@@ -164,19 +178,20 @@ TEST(C6502TestGroup, test_0x15) {
 // ASL ZPX 6
 TEST(C6502TestGroup, test_0x16) {
     c.PC = 1000;
-    mem[1000] = 0x16;
-    mem[1001] = 0x85;
+    mock_bus::expect_read(1000, 0x16);
+    mock_bus::expect_read(1001, 0x85);
     c.X = 0x82;
-    mem[7] = 0b00001111;
+    mock_bus::expect_read(7, 0b00001111);
+    mock_bus::expect_write(7, 0b00011110, true);
     CHECK_EQUAL(6, c6202_run_next_instruction(&c));
     CHECK_EQUAL(c.PC, 1002);
-    CHECK_EQUAL(mem[7], 0b00011110);
 }
 
 // CLC IMP 2
 TEST(C6502TestGroup, test_0x18) {
     c.PC = 500;
-    mem[500] = 0x18;
+    mock_bus::expect_read(500, 0x18);
+
     c.SR.u8 = ~0;
     c.SR.C = 1;
 
