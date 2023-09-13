@@ -3,6 +3,7 @@
 #include <c2C02.h>
 #include <c6502.h>
 #include <nes_cart.h>
+#include <nes_gamepad.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -14,6 +15,8 @@ typedef struct {
     NesCart cart;
     C6502 cpu;
     C2C02 ppu;
+
+    NesGamepad gamepad;
 
     int cpu_subcycle_count;
 } NesBus;
