@@ -15,13 +15,17 @@ static struct {
     bool quit_flag;
 } s_ctx = {NULL};
 
+NesBus bus = {0};
+
 static typeof(s_ctx) *const s = &s_ctx;  // Todo - make ctx ptr a param
+
+#define SCALE 4
 
 void spg_init(void) {
     assert(0 == SDL_Init(SDL_INIT_VIDEO));
     // Todo: params
-    s->window = SDL_CreateWindow("WindowTitle", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH * 3,
-                                 SCREEN_HEIGHT * 3, SDL_WINDOW_SHOWN);
+    s->window = SDL_CreateWindow("WindowTitle", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH * SCALE,
+                                 SCREEN_HEIGHT * SCALE, SDL_WINDOW_SHOWN);
     assert(s->window);
 
     s->renderer = SDL_CreateRenderer(s->window, -1, SDL_RENDERER_ACCELERATED);
@@ -34,6 +38,43 @@ void spg_handle_events(void) {
     while (SDL_PollEvent(&e)) {
         if (SDL_QUIT == e.type) {
             s->quit_flag = true;
+        }
+        if ((SDL_KEYDOWN == e.type) || (SDL_KEYUP == e.type)) {
+            const int pressed = (SDL_KEYDOWN == e.type) ? 1 : 0;
+            switch (e.key.keysym.sym) {
+                case SDLK_UP: {
+                    bus.gamepad.buttons.Up = pressed;
+                    break;
+                }
+                case SDLK_DOWN: {
+                    bus.gamepad.buttons.Down = pressed;
+                    break;
+                }
+                case SDLK_LEFT: {
+                    bus.gamepad.buttons.Left = pressed;
+                    break;
+                }
+                case SDLK_RIGHT: {
+                    bus.gamepad.buttons.Right = pressed;
+                    break;
+                }
+                case SDLK_a: {
+                    bus.gamepad.buttons.A = pressed;
+                    break;
+                }
+                case SDLK_s: {
+                    bus.gamepad.buttons.B = pressed;
+                    break;
+                }
+                case SDLK_RETURN: {
+                    bus.gamepad.buttons.Start = pressed;
+                    break;
+                }
+                case SDLK_RSHIFT: {
+                    bus.gamepad.buttons.Select = pressed;
+                    break;
+                }
+            }
         }
     }
 }
@@ -62,7 +103,6 @@ void render(void *, int x, int y, uint8_t r, uint8_t g, uint8_t b) {
 }
 
 int main(int argc, char **argv) {
-    NesBus bus = {0};
     (void)argc;
     nes_cart_init(&bus.cart, argv[1]);
     nes_bus_init(&bus);
@@ -95,12 +135,19 @@ int main(int argc, char **argv) {
     }
 #endif
 
+    // for (int i = 0; i < 21477272 / 4; i++) {
+    //     nes_bus_cycle(&bus);
+    // }
     while (!s->quit_flag) {
-        for (int i = 0; i < 261 * 341; i++) {
+        while (!bus.ppu.status.vblank) {
             nes_bus_cycle(&bus);
         }
         SDL_RenderPresent(s->renderer);
         spg_handle_events();
+        while (bus.ppu.status.vblank) {
+            nes_bus_cycle(&bus);
+        }
+        spg_fill(0, 0, 0);
     }
 
     SDL_Quit();
