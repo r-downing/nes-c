@@ -44,8 +44,7 @@ void spg_handle_events(void) {
     while (SDL_PollEvent(&e)) {
         if (SDL_QUIT == e.type) {
             s->quit_flag = true;
-        }
-        if ((SDL_KEYDOWN == e.type) || (SDL_KEYUP == e.type)) {
+        } else if ((SDL_KEYDOWN == e.type) || (SDL_KEYUP == e.type)) {
             const int pressed = (SDL_KEYDOWN == e.type) ? 1 : 0;
             switch (e.key.keysym.sym) {
                 case SDLK_UP: {
@@ -146,18 +145,24 @@ int main(int argc, char **argv) {
     //     nes_bus_cycle(&bus);
     // }
     while (!s->quit_flag) {
+        const uint32_t loop_start_ms = SDL_GetTicks();
+        while (bus.ppu.status.vblank) {
+            nes_bus_cycle(&bus);
+        }
         while (!bus.ppu.status.vblank) {
             nes_bus_cycle(&bus);
         }
-        SDL_UpdateTexture(s->texture, NULL, scr, (int)(SCREEN_WIDTH * sizeof(uint32_t)));
+
+        SDL_UpdateTexture(s->texture, NULL, scr, sizeof(scr[0]));
         SDL_RenderCopy(s->renderer, s->texture, NULL, NULL);
 
         SDL_RenderPresent(s->renderer);
         spg_handle_events();
-        while (bus.ppu.status.vblank) {
-            nes_bus_cycle(&bus);
+
+        const uint32_t elapsed_ms = SDL_GetTicks() - loop_start_ms;
+        if (elapsed_ms < 17) {
+            SDL_Delay(17 - elapsed_ms);  // Todo - make this better
         }
-        spg_fill(0, 0, 0);
     }
 
     SDL_Quit();
