@@ -9,9 +9,12 @@
 #define SCREEN_WIDTH 256
 #define SCREEN_HEIGHT (240 + 1)
 
+static uint32_t scr[SCREEN_HEIGHT][SCREEN_WIDTH] = {{~0}};
+
 static struct {
     SDL_Window *window;
     SDL_Renderer *renderer;
+    SDL_Texture *texture;
     bool quit_flag;
 } s_ctx = {NULL};
 
@@ -25,12 +28,15 @@ void spg_init(void) {
     assert(0 == SDL_Init(SDL_INIT_VIDEO));
     // Todo: params
     s->window = SDL_CreateWindow("WindowTitle", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH * SCALE,
-                                 SCREEN_HEIGHT* SCALE , SDL_WINDOW_SHOWN);
+                                 SCREEN_HEIGHT * SCALE, SDL_WINDOW_SHOWN);
     assert(s->window);
 
     s->renderer = SDL_CreateRenderer(s->window, -1, SDL_RENDERER_ACCELERATED);
     assert(s->renderer);
     SDL_RenderSetLogicalSize(s->renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    s->texture = SDL_CreateTexture(s->renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_TARGET, SCREEN_WIDTH,
+                                   SCREEN_HEIGHT);
 }
 
 void spg_handle_events(void) {
@@ -80,8 +86,9 @@ void spg_handle_events(void) {
 }
 
 void spg_draw_pixel(int x, int y, uint8_t r, uint8_t g, uint8_t b) {
-    SDL_SetRenderDrawColor(s->renderer, r, g, b, SDL_ALPHA_OPAQUE);
-    SDL_RenderDrawPoint(s->renderer, x, y);
+    scr[y][x] = 0xFF000000 | (r) | (g << 8) | (b << 16);
+    // SDL_SetRenderDrawColor(s->renderer, r, g, b, SDL_ALPHA_OPAQUE);
+    // SDL_RenderDrawPoint(s->renderer, x, y);
 }
 
 void spg_fill(uint8_t r, uint8_t g, uint8_t b) {
@@ -142,6 +149,9 @@ int main(int argc, char **argv) {
         while (!bus.ppu.status.vblank) {
             nes_bus_cycle(&bus);
         }
+        SDL_UpdateTexture(s->texture, NULL, scr, (int)(SCREEN_WIDTH * sizeof(uint32_t)));
+        SDL_RenderCopy(s->renderer, s->texture, NULL, NULL);
+
         SDL_RenderPresent(s->renderer);
         spg_handle_events();
         while (bus.ppu.status.vblank) {
