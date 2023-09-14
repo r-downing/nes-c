@@ -7,7 +7,7 @@
 #include <stdbool.h>
 
 #define SCREEN_WIDTH 256
-#define SCREEN_HEIGHT 240
+#define SCREEN_HEIGHT (240 + 1)
 
 static struct {
     SDL_Window *window;
@@ -25,7 +25,7 @@ void spg_init(void) {
     assert(0 == SDL_Init(SDL_INIT_VIDEO));
     // Todo: params
     s->window = SDL_CreateWindow("WindowTitle", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH * SCALE,
-                                 SCREEN_HEIGHT * SCALE, SDL_WINDOW_SHOWN);
+                                 SCREEN_HEIGHT* SCALE , SDL_WINDOW_SHOWN);
     assert(s->window);
 
     s->renderer = SDL_CreateRenderer(s->window, -1, SDL_RENDERER_ACCELERATED);

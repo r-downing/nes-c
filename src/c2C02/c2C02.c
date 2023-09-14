@@ -1,5 +1,20 @@
 #include <c2C02.h>
 
+const uint8_t system_colors[][3] = {
+    {0x80, 0x80, 0x80}, {0x00, 0x3D, 0xA6}, {0x00, 0x12, 0xB0}, {0x44, 0x00, 0x96}, {0xA1, 0x00, 0x5E},
+    {0xC7, 0x00, 0x28}, {0xBA, 0x06, 0x00}, {0x8C, 0x17, 0x00}, {0x5C, 0x2F, 0x00}, {0x10, 0x45, 0x00},
+    {0x05, 0x4A, 0x00}, {0x00, 0x47, 0x2E}, {0x00, 0x41, 0x66}, {0x00, 0x00, 0x00}, {0x05, 0x05, 0x05},
+    {0x05, 0x05, 0x05}, {0xC7, 0xC7, 0xC7}, {0x00, 0x77, 0xFF}, {0x21, 0x55, 0xFF}, {0x82, 0x37, 0xFA},
+    {0xEB, 0x2F, 0xB5}, {0xFF, 0x29, 0x50}, {0xFF, 0x22, 0x00}, {0xD6, 0x32, 0x00}, {0xC4, 0x62, 0x00},
+    {0x35, 0x80, 0x00}, {0x05, 0x8F, 0x00}, {0x00, 0x8A, 0x55}, {0x00, 0x99, 0xCC}, {0x21, 0x21, 0x21},
+    {0x09, 0x09, 0x09}, {0x09, 0x09, 0x09}, {0xFF, 0xFF, 0xFF}, {0x0F, 0xD7, 0xFF}, {0x69, 0xA2, 0xFF},
+    {0xD4, 0x80, 0xFF}, {0xFF, 0x45, 0xF3}, {0xFF, 0x61, 0x8B}, {0xFF, 0x88, 0x33}, {0xFF, 0x9C, 0x12},
+    {0xFA, 0xBC, 0x20}, {0x9F, 0xE3, 0x0E}, {0x2B, 0xF0, 0x35}, {0x0C, 0xF0, 0xA4}, {0x05, 0xFB, 0xFF},
+    {0x5E, 0x5E, 0x5E}, {0x0D, 0x0D, 0x0D}, {0x0D, 0x0D, 0x0D}, {0xFF, 0xFF, 0xFF}, {0xA6, 0xFC, 0xFF},
+    {0xB3, 0xEC, 0xFF}, {0xDA, 0xAB, 0xEB}, {0xFF, 0xA8, 0xF9}, {0xFF, 0xAB, 0xB3}, {0xFF, 0xD2, 0xB0},
+    {0xFF, 0xEF, 0xA6}, {0xFF, 0xF7, 0x9C}, {0xD7, 0xE8, 0x95}, {0xA6, 0xED, 0xAF}, {0xA2, 0xF2, 0xDA},
+    {0x99, 0xFF, 0xFC}, {0xDD, 0xDD, 0xDD}, {0x11, 0x11, 0x11}, {0x11, 0x11, 0x11}};
+
 static uint8_t *mirror_palette_ram_addr(C2C02 *const c, uint16_t addr) {
     addr &= 0x1F;
     // $3F10/$3F14/$3F18/$3F1C are mirrors of $3F00/$3F04/$3F08/$3F0C
@@ -42,7 +57,7 @@ uint8_t c2C02_read_reg(C2C02 *const c, const uint8_t addr) {
             if (c->vram_address.addr >= 0x3F00) {
                 ret = c->data_read_buffer;  // reading from palette, no delay
             }
-            c->vram_address.addr += (c->ctrl.vram_inc ? 31 : 1);
+            c->vram_address.addr += (c->ctrl.vram_inc ? 32 : 1);
             return ret;
         }
         default:
@@ -141,29 +156,139 @@ It also does a fetch of a
 34th (nametable, attribute, pattern) tuple that is never used, but some mappers rely on this fetch for timing purposes.
 */
 #include <stdio.h>
+
+typedef union __attribute__((__packed__)) {
+    uint16_t u16;
+    struct __attribute__((__packed__)) {
+        uint16_t coarse_x_div_4 : 3;
+        uint16_t coarse_y_div_4 : 3;
+        uint16_t attribute_offset_960 : 4;
+        uint16_t nametable_x : 1;
+        uint16_t nametable_y : 1;
+        uint16_t : 4;
+    };
+} attribute_table_addr;
+
+static void render_palettes_on_bottom(C2C02 *const c) {
+    for (int i = 0; i < 32; i++) {
+        const uint8_t *color = system_colors[bus_read(c, 0x3F00 + i)];
+        c->draw_pixel(c->draw_ctx, i, 240, color[0], color[1], color[2]);
+    }
+
+    for (int i = 0; i < 32; i++) {
+        const uint8_t *color = system_colors[c->palette_ram[i]];
+        c->draw_pixel(c->draw_ctx, i + 64, 240, color[0], color[1], color[2]);
+    }
+}
+
 static void simple_render(C2C02 *const c) {
-    const uint16_t nametable_base_addr = 0x2000;
-    // const uint16_t nametable_base_addr = 0x2000 + (c->ctrl.nametable_x ? 0x400 : 0) + (c->ctrl.nametable_y ? 0x800 : 0);
+    render_palettes_on_bottom(c);
+#if 1
+    const uint16_t nametable_base = 0x2000 + (c->ctrl.nametable_x ? 0x400 : 0) + (c->ctrl.nametable_y ? 0x800 : 0);
 
-    const uint16_t pattern_base_addr = (c->ctrl.background_pattern_table ? 0x1000 : 0);
+    for (int i = 0; i < 0x03c0; i++) {
+        const uint8_t tile_idx = bus_read(c, nametable_base + i);
+        const uint8_t tile_x = i % 32;
+        const uint8_t tile_y = i / 32;
 
-    printf("CTRL %x\n", c->ctrl.u8);
-    for (int ti = 0; ti < 32 * 30; ti++) {
-        const uint8_t nametable_entry = bus_read(c, (nametable_base_addr + ti));
-        const uint8_t tile_x = ti % 32;
-        const uint8_t tile_y = ti / 32;
-        nes_chr_tile tile = {0};
-        for (size_t ss = 0; ss < sizeof(tile); ss++) {
-            tile.u8_arr[ss] = bus_read(c, ss + (pattern_base_addr + (nametable_entry * sizeof(tile))));
+        const int attr_table_idx = (tile_y / 4 * 8) + (tile_x / 4);
+        const int attr_byte = bus_read(c, nametable_base + 0x3C0 + attr_table_idx);
+        int pallet_idx;
+        int pswitch = ((tile_x % 4) & 2) | ((tile_y % 4) / 2);
+        if (pswitch == 0) {
+            pallet_idx = attr_byte & 0b11;
+        } else if (pswitch == 2) {
+            pallet_idx = (attr_byte >> 2) & 0b11;
+        } else if (pswitch == 1) {
+            pallet_idx = (attr_byte >> 4) & 0b11;
+        } else if (pswitch == 3) {
+            pallet_idx = (attr_byte >> 6) & 0b11;
+        }
+        // pallet_idx = attr_byte & 0b11;
+
+        pallet_idx *= 4;
+
+        uint8_t tile_arr[16] = {0};
+        for (int j = 0; j < 16; j++) {
+            tile_arr[j] = bus_read(c, (c->ctrl.background_pattern_table << 12) + tile_idx * 16 + j);
         }
         for (int y = 0; y < 8; y++) {
-            for (int x = 0; x < 8; x++) {
-                const uint8_t cc = (BIT(tile.hi_plane[y], 7 - x) << 1) | BIT(tile.lo_plane[y], 7 - x);
-                c->draw_pixel(c->draw_ctx, x + (8 * tile_x), y + (8 * tile_y), (cc & 1) ? 255 : 0, (cc & 2) ? 255 : 0,
-                              0);
+            int lower = tile_arr[y];
+            int upper = tile_arr[y + 8];
+            for (int x = 7; x >= 0; x--) {
+                const int val = ((1 & upper) << 1) | (1 & lower);
+                upper >>= 1;
+                lower >>= 1;
+                const uint8_t *cc;  // = system_colors[val];
+                if (val == 0) {
+                    cc = system_colors[bus_read(c, 0x3F00)];
+                } else {
+                    cc = system_colors[bus_read(c, 0x3F00 + (pallet_idx + val))];
+                }
+                c->draw_pixel(c->draw_ctx, tile_x * 8 + x, tile_y * 8 + y, cc[0], cc[1], cc[2]);
             }
         }
     }
+#endif
+#if 0
+    // const uint16_t nametable_base_addr = 0x2000;
+    // const uint16_t nametable_base_addr = 0x2000 + (c->ctrl.nametable * 0x400);
+    const uint16_t nametable_base = 0x2000 + (c->ctrl.nametable_x ? 0x400 : 0) + (c->ctrl.nametable_y ? 0x800 : 0);
+
+    const uint16_t pattern_base_addr = (c->ctrl.background_pattern_table ? 0x1000 : 0);
+
+    for (int ti = 0; ti < 32 * 30; ti++) {
+        const uint8_t nametable_entry = bus_read(c, (nametable_base + ti));
+        const uint8_t tile_x = ti & 0x1F;
+        const uint8_t tile_y = ti >> 5;
+
+        const attribute_table_addr attr_addr = {.coarse_x_div_4 = tile_x / 4,
+                                                .coarse_y_div_4 = tile_y / 4,
+                                                .attribute_offset_960 = 960 >> 6,
+                                                .nametable_x = c->ctrl.nametable_x,
+                                                .nametable_y = c->ctrl.nametable_y};
+
+        // const uint8_t attr_addr = 0x23C0 + ((c->ctrl.nametable_y << 11) | (c->ctrl.nametable_x << 10) |
+        //                                     ((tile_y >> 2) << 3) | (tile_x >> 2));
+
+        uint8_t attr = bus_read(c, attr_addr.u16);
+
+        if (tile_y & 0x02) attr >>= 4;
+        if (tile_x & 0x02) attr >>= 2;
+        attr &= 0x03;
+        attr <<= 2;
+
+        // uint8_t colors[4];
+        // for (int cc = 0; cc < 4; cc++) {
+        //     colors[cc] = bus_read(c, 0x3F00 | attr | cc);
+        // }
+        // colors[0] = bus_read(c, 0x3F00);
+
+        nes_chr_tile tile = {0};
+        for (size_t ss = 0; ss < sizeof(tile); ss++) {
+            tile.u8_arr[ss] = bus_read(c, ss + (pattern_base_addr + (nametable_entry << 4)));
+        }
+
+        for (int y = 0; y < 8; y++) {
+            for (int x = 0; x < 8; x++) {
+                const int hi = (BIT(tile.hi_plane[y], 7 - x) << 1);
+                const int lo = BIT(tile.lo_plane[y], 7 - x);
+
+                // const uint8_t *color = system_colors[bus_read(c, 0x3F00 | ((hi) | lo))];
+                // const uint8_t *color = system_colors[c->palette_ram[(hi) | lo]];
+                // c->draw_pixel(c->draw_ctx, x + (8 * tile_x), y + (8 * tile_y), color[0], color[1], color[2]);
+
+                // const uint8_t *const color =
+                //     system_colors[bus_read(c, 0x3F00 | (c->ctrl.background_pattern_table << 5) | attr | (hi) | lo)];
+                const uint8_t *const color = system_colors[bus_read(c, 0x3F00 | attr | (hi) | lo)];
+                c->draw_pixel(c->draw_ctx, x + (8 * tile_x), y + (8 * tile_y), color[0], color[1], color[2]);
+
+                // c->draw_pixel(c->draw_ctx, x + (8 * tile_x), y + (8 * tile_y), (hi | lo) ? 255 : 0, 0, 0);
+                // c->draw_pixel(c->draw_ctx, x + (8 * tile_x), y + (8 * tile_y), (lo) ? 255 : 0, (hi) ? 255 : 0, 0);
+            }
+        }
+    }
+#endif
 }
 
 void c2C02_cycle(C2C02 *const c) {
@@ -183,7 +308,41 @@ void c2C02_cycle(C2C02 *const c) {
             c->status.vblank = 0;
             // Todo - sprite 0 overflow?
         }
-        // Todo - if dot in orange ranges...
+        if (0 == c->dot) {
+            // idle
+        } else if ((c->dot < 256) || (c->dot >= 321)) {
+            switch (c->dot & 7) {
+                case 1: {
+                    // Todo - NT byte
+                    break;
+                }
+                case 3: {
+                    // Todo - At byte
+                    break;
+                }
+                case 5: {
+                    // Todo - low BG tile byte
+                    break;
+                }
+                case 7: {
+                    // Todo - hight tile byte
+                    break;
+                }
+                case 0: {
+                    // Inc hori(v)
+                    if (c->mask.show_background || c->mask.show_sprites) {
+                        if (++c->vram_address.coarse_x == 0) {
+                            c->vram_address.nametable_x = ~c->vram_address.nametable_x;
+                        }
+                    }
+                    break;
+                }
+            }  // switch
+        } else if (c->dot == 256) {
+            // Todo - inc vert_v
+        } else if (c->dot == 257) {
+            // Todo - hori_v = hori_t
+        }
     }
 
     if ((339 == c->dot) && (-1 == c->scanline) && (c->mask.show_background || c->mask.show_sprites)) {
