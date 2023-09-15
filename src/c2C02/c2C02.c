@@ -151,63 +151,120 @@ typedef struct __attribute__((__packed__)) {
     uint8_t x;
 } oam_sprite;
 
+typedef union __attribute__((__packed__)) {
+    uint16_t u16;
+    struct __attribute__((__packed__)) {
+        uint16_t coarse_x : 5;
+        uint16_t coarse_y : 5;
+        uint16_t nametable_x : 1;  // +0x400
+        uint16_t nametable_y : 1;  // +0x800
+        uint16_t base : 4;         // 2 (0x2000)
+    };
+} nametable_addr_t;
+
+static uint16_t get_nametable_address(uint8_t coarse_x, uint8_t coarse_y, uint8_t nametable_x, uint8_t nametable_y) {
+    return (nametable_addr_t){
+        .coarse_x = coarse_x,
+        .coarse_y = coarse_y,
+        .nametable_x = nametable_x,
+        .nametable_y = nametable_y,
+        .base = 2,
+    }
+        .u16;
+}
+
+static uint16_t get_attribute_table_address(uint16_t nametable_address) {
+    const nametable_addr_t nt = {.u16 = nametable_address};
+
+    // https://www.nesdev.org/wiki/PPU_scrolling#Tile_and_attribute_fetching
+    return (union __attribute__((__packed__)) {
+               uint16_t u16;
+               struct __attribute__((__packed__)) {
+                   uint16_t coarse_x_div_4 : 3;
+                   uint16_t coarse_y_div_4 : 3;
+                   uint16_t attribute_offset_15 : 4;  // const offset of 960
+                   uint16_t nametable_x : 1;
+                   uint16_t nametable_y : 1;
+                   uint16_t nametable_base_2 : 4;  // const base of 0x2000
+               };
+           }){
+        .coarse_x_div_4 = nt.coarse_x >> 2,
+        .coarse_y_div_4 = nt.coarse_y >> 2,
+        .attribute_offset_15 = 15,
+        .nametable_x = nt.nametable_x,
+        .nametable_y = nt.nametable_y,
+        .nametable_base_2 = 2,
+    }
+        .u16;
+}
+
+static uint16_t get_pattern_table_address(uint8_t fine_y_offset, uint8_t bitplane, uint8_t nametable_value,
+                                          uint8_t pattern_table) {
+    // https://www.nesdev.org/wiki/PPU_pattern_tables
+    return (union __attribute__((__packed__)) {
+               uint16_t u16;
+               struct __attribute__((__packed__)) {
+                   uint16_t fine_y_offset : 3;    // Fine Y offset, the row number within a tile
+                   uint16_t bitplane : 1;         // 0 for low
+                   uint16_t nametable_value : 8;  // 4b for column, 4b for row
+                   uint16_t pattern_table : 1;    // from ctrl reg (for bg or sprite)
+                   uint16_t : 3;                  // unused
+               };
+           }){
+        .fine_y_offset = fine_y_offset,
+        .bitplane = bitplane,
+        .nametable_value = nametable_value,
+        .pattern_table = pattern_table,
+    }
+        .u16;
+}
+
+static uint8_t get_palette_num(uint8_t attribute_value, uint8_t coarse_x, uint8_t coarse_y) {
+    const int shift = ((coarse_y & 2) << 1) | (coarse_x & 2);
+    return (attribute_value >> shift) & 0b11;
+}
+
+static void draw_pixel(const C2C02 *const c, const uint8_t x, const uint8_t y, const uint8_t system_color) {
+    const uint8_t *const color = system_colors[system_color];
+    c->draw_pixel(c->draw_ctx, x, y, color[0], color[1], color[2]);
+}
+
 static void simple_render(C2C02 *const c) {
     render_palettes_on_bottom(c);
 
-    const uint16_t nametable_base = 0x2000 + (c->ctrl.nametable_x ? 0x400 : 0) + (c->ctrl.nametable_y ? 0x800 : 0);
-
     for (int i = 0; i < 0x03c0; i++) {
-        const uint8_t tile_idx = bus_read(c, nametable_base + i);
-        const uint8_t tile_x = i & 0x1F;
-        const uint8_t tile_y = i >> 5;
+        const int coarse_x = i & 0x1F;
+        const int coarse_y = i >> 5;
+        const uint16_t nt_addr = get_nametable_address(coarse_x, coarse_y, c->ctrl.nametable_x, c->ctrl.nametable_y);
 
-        const union __attribute__((__packed__)) {
-            uint16_t u16;
-            struct __attribute__((__packed__)) {
-                uint16_t coarse_x_div_4 : 3;
-                uint16_t coarse_y_div_4 : 3;
-                uint16_t attribute_offset_15 : 4;
-                uint16_t nametable_x : 1;
-                uint16_t nametable_y : 1;
-                uint16_t nametable_base_2 : 4;
-            };
-        } attribute_table_addr = {
-            .coarse_x_div_4 = tile_x / 4,
-            .coarse_y_div_4 = tile_y / 4,
-            .attribute_offset_15 = 15,
-            .nametable_x = c->ctrl.nametable_x,
-            .nametable_y = c->ctrl.nametable_y,
-            .nametable_base_2 = 2,
-        };
-        const int attr_byte = bus_read(c, attribute_table_addr.u16);
+        const uint8_t nt_byte = bus_read(c, nt_addr);
 
-        int pswitch = ((tile_x % 4) / 2) | ((tile_y % 4) & 2);
-        int pallet_idx = (attr_byte >> (2 * pswitch)) & 0b11;
+        const uint8_t attr_byte = bus_read(c, get_attribute_table_address(nt_addr));
 
-        pallet_idx *= 4;
+        const uint8_t palette_num = get_palette_num(attr_byte, coarse_x, coarse_y);
 
         for (int y = 0; y < 8; y++) {
-            int lower = bus_read(c, (c->ctrl.background_pattern_table << 12) + tile_idx * 16 + y);
-            int upper = bus_read(c, (c->ctrl.background_pattern_table << 12) + tile_idx * 16 + y + 8);
+            int lower = bus_read(c, get_pattern_table_address(y, 0, nt_byte, c->ctrl.background_pattern_table));
+            int upper = bus_read(c, get_pattern_table_address(y, 1, nt_byte, c->ctrl.background_pattern_table));
             for (int x = 7; x >= 0; x--) {
                 const int val = ((1 & upper) << 1) | (1 & lower);
                 upper >>= 1;
                 lower >>= 1;
-                const uint8_t *cc;  // = system_colors[val];
+                int cc;
                 if (val == 0) {
-                    cc = system_colors[bus_read(c, 0x3F00)];
+                    cc = bus_read(c, 0x3F00);
                 } else {
-                    cc = system_colors[bus_read(c, 0x3F00 + (pallet_idx + val))];
+                    cc = bus_read(c, 0x3F00 | (palette_num << 2) | val);
                 }
-                c->draw_pixel(c->draw_ctx, tile_x * 8 + x, tile_y * 8 + y, cc[0], cc[1], cc[2]);
+                draw_pixel(c, coarse_x * 8 + x, coarse_y * 8 + y, cc);
             }
         }
     }
 
-    for (size_t i = 0; i < sizeof(c->oam.data) / sizeof(oam_sprite); i++) {
-        const oam_sprite *const sprite = &((oam_sprite *)c->oam.data)[i];
-        (void)sprite;
-    }
+    // for (size_t i = 0; i < sizeof(c->oam.data) / sizeof(oam_sprite); i++) {
+    //     const oam_sprite *const sprite = &((oam_sprite *)c->oam.data)[i];
+    //     (void)sprite;
+    // }
 }
 
 /* https://www.nesdev.org/wiki/PPU_nametables
