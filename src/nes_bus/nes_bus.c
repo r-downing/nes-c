@@ -5,6 +5,12 @@
 
 // https://www.nesdev.org/wiki/CPU_memory_map
 
+static void nes_bus_ppu_dma(NesBus *bus, const uint16_t page) {
+    for (int i = 0; i < 0x100; i++) {
+        nes_bus_ppu_write(bus, 0x2004, nes_bus_cpu_read(bus, (page << 8) | i));
+    }
+}
+
 bool nes_bus_cpu_write(NesBus *bus, uint16_t addr, uint8_t val) {
     if (nes_cart_prg_write(&bus->cart, addr, val)) {
         return true;
@@ -18,6 +24,10 @@ bool nes_bus_cpu_write(NesBus *bus, uint16_t addr, uint8_t val) {
         return true;
     }
     if (addr < 0x4020) {
+        if (addr == 0x4014) {
+            nes_bus_ppu_dma(bus, val);
+            bus->cpu.current_op_cycles_remaining += 513 + (bus->cpu.total_cycles & 1);  // cpu skips cycles for DMA
+        }
         if (addr == 0x4016) {
             nes_gamepad_write_reg(&bus->gamepad, val);
             // Todo - write to second gamepad

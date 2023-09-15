@@ -64,9 +64,9 @@ typedef struct C2C02 {
             // (0: add 1, going across; 1: add 32, going down)
             uint8_t vram_inc : 1;
 
-            uint8_t : 1;                           // Todo - sprite pattern table
-            uint8_t background_pattern_table : 1;  // 1: 0x1000
-            uint8_t : 1;                           // Todo - sprite size
+            uint8_t sprite_pattern_table : 1;      // for 8x8 sprites (0: $0000; 1: $1000; ignored in 8x16 mode)
+            uint8_t background_pattern_table : 1;  // 1: (0: $0000; 1: $1000)
+            uint8_t sprite_size : 1;               // 0: 8x8 pixels; 1: 8x16 pixels
             uint8_t : 1;                           // Todo - ppu master/slave select
             uint8_t nmi_at_vblank : 1;
         };
@@ -103,6 +103,11 @@ typedef struct C2C02 {
     uint8_t fine_x;
 
     uint8_t palette_ram[0x20];
+
+    struct {
+        uint8_t data[0x100];
+        uint8_t addr;
+    } oam;
 
     uint32_t frames;
 } C2C02;

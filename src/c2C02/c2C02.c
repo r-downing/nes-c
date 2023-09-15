@@ -41,16 +41,18 @@ static void bus_write(C2C02 *const c, uint16_t addr, uint8_t val) {
 
 uint8_t c2C02_read_reg(C2C02 *const c, const uint8_t addr) {
     switch (addr & 0x7) {
+        // case 0x1: mask not readable
         case 0x2: {  // status
             const uint8_t ret = (c->status.u8 & 0xE0) | (0 /* Todo - ppu stale data */);
             c->status.vblank = 0;
             c->address_latch = false;
             return ret;
         }
-        case 0x3:
-            return 0;  // Todo - OAM addr
+        // case 0x3: OAM addr not readable
         case 0x4:
-            return 0;  // Todo - OAM data
+            return c->oam.data[c->oam.addr];
+        // case 0x5: // scroll not readable
+        // case 0x6: // addr not readable
         case 0x7: {
             uint8_t ret = c->data_read_buffer;
             c->data_read_buffer = bus_read(c, c->vram_address.addr);
@@ -107,10 +109,12 @@ void c2C02_write_reg(C2C02 *const c, const uint8_t addr, const uint8_t val) {
             break;
         }
         case 0x3: {
-            break;  // Todo OAM addr
+            c->oam.addr = val;
+            break;
         }
         case 0x4: {
-            break;  // Todo OAM data
+            c->oam.data[c->oam.addr++] = val;
+            break;
         }
         case 0x5: {
             write_scroll_reg(c, val);
@@ -128,10 +132,6 @@ void c2C02_write_reg(C2C02 *const c, const uint8_t addr, const uint8_t val) {
     }
 }
 
-void c2C02_dma() {
-    // Todo
-}
-
 static void render_palettes_on_bottom(C2C02 *const c) {
     for (int i = 0; i < 32; i++) {
         const uint8_t *color = system_colors[bus_read(c, 0x3F00 + i)];
@@ -143,6 +143,13 @@ static void render_palettes_on_bottom(C2C02 *const c) {
         c->draw_pixel(c->draw_ctx, i + 64, 240, color[0], color[1], color[2]);
     }
 }
+
+typedef struct __attribute__((__packed__)) {
+    uint8_t y;
+    uint8_t tile;
+    uint8_t attr;
+    uint8_t x;
+} oam_sprite;
 
 static void simple_render(C2C02 *const c) {
     render_palettes_on_bottom(c);
@@ -195,6 +202,11 @@ static void simple_render(C2C02 *const c) {
                 c->draw_pixel(c->draw_ctx, tile_x * 8 + x, tile_y * 8 + y, cc[0], cc[1], cc[2]);
             }
         }
+    }
+
+    for (size_t i = 0; i < sizeof(c->oam.data) / sizeof(oam_sprite); i++) {
+        const oam_sprite *const sprite = &((oam_sprite *)c->oam.data)[i];
+        (void)sprite;
     }
 }
 
@@ -263,6 +275,8 @@ void c2C02_cycle(C2C02 *const c) {
             // Todo - inc vert_v
         } else if (c->dot == 257) {
             // Todo - hori_v = hori_t
+            // Todo OAMADDR is set to 0 during each of ticks 257–320 (the sprite tile loading interval) of the
+            // pre-render and visible scanlines.
         }
     }
 
