@@ -7,7 +7,7 @@
 
 static void nes_bus_ppu_dma(NesBus *bus, const uint16_t page) {
     for (int i = 0; i < 0x100; i++) {
-        nes_bus_ppu_write(bus, 0x2004, nes_bus_cpu_read(bus, (page << 8) | i));
+        c2C02_write_reg(&bus->ppu, 0x2004 & 0x7, nes_bus_cpu_read(bus, (page << 8) | i));
     }
 }
 
