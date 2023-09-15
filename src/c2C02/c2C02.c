@@ -132,43 +132,6 @@ void c2C02_dma() {
     // Todo
 }
 
-#define BIT(x, bit) (((x) >> (bit)) & 1)
-typedef union __attribute__((__packed__)) {
-    uint8_t u8_arr[16];
-    struct __attribute__((__packed__)) {
-        uint8_t hi_plane[8];
-        uint8_t lo_plane[8];
-    };
-} nes_chr_tile;
-
-/* https://www.nesdev.org/wiki/PPU_nametables
-Conceptually, the PPU does this 33 times for each scanline:
-
-- Fetch a nametable entry from $2000-$2FBF.
-- Fetch the corresponding attribute table entry from $23C0-$2FFF and increment the current VRAM address within the same
-row.
-- Fetch the low-order byte of an 8x1 pixel sliver of pattern table from $0000-$0FF7 or $1000-$1FF7.
-- Fetch the high-order byte of this sliver from an address 8 bytes higher.
-- Turn the attribute data and the pattern table data into palette indices, and combine them with data from sprite data
-using priority.
-
-It also does a fetch of a
-34th (nametable, attribute, pattern) tuple that is never used, but some mappers rely on this fetch for timing purposes.
-*/
-#include <stdio.h>
-
-typedef union __attribute__((__packed__)) {
-    uint16_t u16;
-    struct __attribute__((__packed__)) {
-        uint16_t coarse_x_div_4 : 3;
-        uint16_t coarse_y_div_4 : 3;
-        uint16_t attribute_offset_960 : 4;
-        uint16_t nametable_x : 1;
-        uint16_t nametable_y : 1;
-        uint16_t : 4;
-    };
-} attribute_table_addr;
-
 static void render_palettes_on_bottom(C2C02 *const c) {
     for (int i = 0; i < 32; i++) {
         const uint8_t *color = system_colors[bus_read(c, 0x3F00 + i)];
@@ -183,38 +146,42 @@ static void render_palettes_on_bottom(C2C02 *const c) {
 
 static void simple_render(C2C02 *const c) {
     render_palettes_on_bottom(c);
-#if 1
+
     const uint16_t nametable_base = 0x2000 + (c->ctrl.nametable_x ? 0x400 : 0) + (c->ctrl.nametable_y ? 0x800 : 0);
 
     for (int i = 0; i < 0x03c0; i++) {
         const uint8_t tile_idx = bus_read(c, nametable_base + i);
-        const uint8_t tile_x = i % 32;
-        const uint8_t tile_y = i / 32;
+        const uint8_t tile_x = i & 0x1F;
+        const uint8_t tile_y = i >> 5;
 
-        const int attr_table_idx = (tile_y / 4 * 8) + (tile_x / 4);
-        const int attr_byte = bus_read(c, nametable_base + 0x3C0 + attr_table_idx);
-        int pallet_idx;
-        int pswitch = ((tile_x % 4) & 2) | ((tile_y % 4) / 2);
-        if (pswitch == 0) {
-            pallet_idx = attr_byte & 0b11;
-        } else if (pswitch == 2) {
-            pallet_idx = (attr_byte >> 2) & 0b11;
-        } else if (pswitch == 1) {
-            pallet_idx = (attr_byte >> 4) & 0b11;
-        } else if (pswitch == 3) {
-            pallet_idx = (attr_byte >> 6) & 0b11;
-        }
-        // pallet_idx = attr_byte & 0b11;
+        const union __attribute__((__packed__)) {
+            uint16_t u16;
+            struct __attribute__((__packed__)) {
+                uint16_t coarse_x_div_4 : 3;
+                uint16_t coarse_y_div_4 : 3;
+                uint16_t attribute_offset_15 : 4;
+                uint16_t nametable_x : 1;
+                uint16_t nametable_y : 1;
+                uint16_t nametable_base_2 : 4;
+            };
+        } attribute_table_addr = {
+            .coarse_x_div_4 = tile_x / 4,
+            .coarse_y_div_4 = tile_y / 4,
+            .attribute_offset_15 = 15,
+            .nametable_x = c->ctrl.nametable_x,
+            .nametable_y = c->ctrl.nametable_y,
+            .nametable_base_2 = 2,
+        };
+        const int attr_byte = bus_read(c, attribute_table_addr.u16);
+
+        int pswitch = ((tile_x % 4) / 2) | ((tile_y % 4) & 2);
+        int pallet_idx = (attr_byte >> (2 * pswitch)) & 0b11;
 
         pallet_idx *= 4;
 
-        uint8_t tile_arr[16] = {0};
-        for (int j = 0; j < 16; j++) {
-            tile_arr[j] = bus_read(c, (c->ctrl.background_pattern_table << 12) + tile_idx * 16 + j);
-        }
         for (int y = 0; y < 8; y++) {
-            int lower = tile_arr[y];
-            int upper = tile_arr[y + 8];
+            int lower = bus_read(c, (c->ctrl.background_pattern_table << 12) + tile_idx * 16 + y);
+            int upper = bus_read(c, (c->ctrl.background_pattern_table << 12) + tile_idx * 16 + y + 8);
             for (int x = 7; x >= 0; x--) {
                 const int val = ((1 & upper) << 1) | (1 & lower);
                 upper >>= 1;
@@ -229,68 +196,22 @@ static void simple_render(C2C02 *const c) {
             }
         }
     }
-#endif
-#if 0
-    // const uint16_t nametable_base_addr = 0x2000;
-    // const uint16_t nametable_base_addr = 0x2000 + (c->ctrl.nametable * 0x400);
-    const uint16_t nametable_base = 0x2000 + (c->ctrl.nametable_x ? 0x400 : 0) + (c->ctrl.nametable_y ? 0x800 : 0);
-
-    const uint16_t pattern_base_addr = (c->ctrl.background_pattern_table ? 0x1000 : 0);
-
-    for (int ti = 0; ti < 32 * 30; ti++) {
-        const uint8_t nametable_entry = bus_read(c, (nametable_base + ti));
-        const uint8_t tile_x = ti & 0x1F;
-        const uint8_t tile_y = ti >> 5;
-
-        const attribute_table_addr attr_addr = {.coarse_x_div_4 = tile_x / 4,
-                                                .coarse_y_div_4 = tile_y / 4,
-                                                .attribute_offset_960 = 960 >> 6,
-                                                .nametable_x = c->ctrl.nametable_x,
-                                                .nametable_y = c->ctrl.nametable_y};
-
-        // const uint8_t attr_addr = 0x23C0 + ((c->ctrl.nametable_y << 11) | (c->ctrl.nametable_x << 10) |
-        //                                     ((tile_y >> 2) << 3) | (tile_x >> 2));
-
-        uint8_t attr = bus_read(c, attr_addr.u16);
-
-        if (tile_y & 0x02) attr >>= 4;
-        if (tile_x & 0x02) attr >>= 2;
-        attr &= 0x03;
-        attr <<= 2;
-
-        // uint8_t colors[4];
-        // for (int cc = 0; cc < 4; cc++) {
-        //     colors[cc] = bus_read(c, 0x3F00 | attr | cc);
-        // }
-        // colors[0] = bus_read(c, 0x3F00);
-
-        nes_chr_tile tile = {0};
-        for (size_t ss = 0; ss < sizeof(tile); ss++) {
-            tile.u8_arr[ss] = bus_read(c, ss + (pattern_base_addr + (nametable_entry << 4)));
-        }
-
-        for (int y = 0; y < 8; y++) {
-            for (int x = 0; x < 8; x++) {
-                const int hi = (BIT(tile.hi_plane[y], 7 - x) << 1);
-                const int lo = BIT(tile.lo_plane[y], 7 - x);
-
-                // const uint8_t *color = system_colors[bus_read(c, 0x3F00 | ((hi) | lo))];
-                // const uint8_t *color = system_colors[c->palette_ram[(hi) | lo]];
-                // c->draw_pixel(c->draw_ctx, x + (8 * tile_x), y + (8 * tile_y), color[0], color[1], color[2]);
-
-                // const uint8_t *const color =
-                //     system_colors[bus_read(c, 0x3F00 | (c->ctrl.background_pattern_table << 5) | attr | (hi) | lo)];
-                const uint8_t *const color = system_colors[bus_read(c, 0x3F00 | attr | (hi) | lo)];
-                c->draw_pixel(c->draw_ctx, x + (8 * tile_x), y + (8 * tile_y), color[0], color[1], color[2]);
-
-                // c->draw_pixel(c->draw_ctx, x + (8 * tile_x), y + (8 * tile_y), (hi | lo) ? 255 : 0, 0, 0);
-                // c->draw_pixel(c->draw_ctx, x + (8 * tile_x), y + (8 * tile_y), (lo) ? 255 : 0, (hi) ? 255 : 0, 0);
-            }
-        }
-    }
-#endif
 }
 
+/* https://www.nesdev.org/wiki/PPU_nametables
+Conceptually, the PPU does this 33 times for each scanline:
+
+- Fetch a nametable entry from $2000-$2FBF.
+- Fetch the corresponding attribute table entry from $23C0-$2FFF and increment the current VRAM address within the same
+row.
+- Fetch the low-order byte of an 8x1 pixel sliver of pattern table from $0000-$0FF7 or $1000-$1FF7.
+- Fetch the high-order byte of this sliver from an address 8 bytes higher.
+- Turn the attribute data and the pattern table data into palette indices, and combine them with data from sprite data
+using priority.
+
+It also does a fetch of a 34th (nametable, attribute, pattern) tuple that is never used, but some mappers rely on this
+fetch for timing purposes.
+*/
 void c2C02_cycle(C2C02 *const c) {
     // https://www.nesdev.org/w/images/default/d/d1/Ntsc_timing.png
 
