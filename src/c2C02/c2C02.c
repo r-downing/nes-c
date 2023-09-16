@@ -144,11 +144,27 @@ static void render_palettes_on_bottom(C2C02 *const c) {
     }
 }
 
+// https://www.nesdev.org/wiki/PPU_OAM
 typedef struct __attribute__((__packed__)) {
-    uint8_t y;
-    uint8_t tile;
-    uint8_t attr;
-    uint8_t x;
+    uint8_t y;  // Y position of top of sprite
+
+    union __attribute__((__packed__)) {
+        uint8_t tile;  // For 8x8 sprites, this is tile number within pattern table selected in bit 3 of PPUCTRL
+        struct __attribute__((__packed__)) {
+            uint8_t bank : 1;  // Bank ($0000 or $1000) of
+            uint8_t tile : 7;  // ile number of top of sprite (0 to 254; bottom half gets the next tile)
+        } _8x16;
+    };
+
+    struct __attribute__((__packed__)) {
+        uint8_t palette : 2;          // Palette (4 to 7) of sprite
+        uint8_t : 3;                  // Unimplemented (read 0)
+        uint8_t priority : 1;         // Priority (0: in front of background; 1: behind background)
+        uint8_t flip_horizontal : 1;  // does not change bounding box
+        uint8_t flip_vertical : 1;    // does not change bounding box
+    } attributes;
+
+    uint8_t x;  // X position of left side of sprite.
 } oam_sprite;
 
 typedef union __attribute__((__packed__)) {
