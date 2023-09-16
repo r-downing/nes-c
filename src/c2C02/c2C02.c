@@ -351,8 +351,8 @@ void c2C02_cycle(C2C02 *const c) {
         // idle, post-render
         if ((1 == c->dot) && (241 == c->scanline)) {
             c->status.vblank = 1;
-            if (c->ctrl.nmi_at_vblank && c->nmi_callback) {
-                c->nmi_callback(c->nmi_ctx);
+            if (c->ctrl.nmi_at_vblank && c->nmi.callback) {
+                c->nmi.callback(c->nmi.callback);
                 simple_render(c);
             }
         }

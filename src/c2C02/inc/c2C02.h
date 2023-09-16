@@ -38,8 +38,11 @@ typedef union __attribute__((__packed__)) {
 } C2C02_loopy_register;
 
 typedef struct C2C02 {
-    void (*nmi_callback)(void *nmi_ctx);
-    void *nmi_ctx;
+    struct {
+        void (*callback)(void *ctx);
+        void *ctx;
+    } nmi;
+
 
     const C2C02BusInterface *bus;
     void *bus_ctx;
