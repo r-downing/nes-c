@@ -16,6 +16,6 @@ if(NOT EMCC_DETECTED)
 endif()
 
 
-add_compile_options(-Wall -Wextra -Werror)
+add_compile_options(-Wall -Wextra -Werror -Wwrite-strings -Wno-error=unused-variable -Wno-error=unused-parameter -Wno-error=unused-function)
 
 add_subdirectory(src)
