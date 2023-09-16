@@ -9,9 +9,7 @@ string(REGEX MATCH ".*/emcc" EMCC_DETECTED "${CMAKE_C_COMPILER}")
 
 if(NOT EMCC_DETECTED)
     add_subdirectory(lib/cpputest)
-    if(WIN32)
-        add_subdirectory(lib/SDL)
-    endif()
+    add_subdirectory(lib/SDL)
     add_subdirectory(tests)
 endif()
 
