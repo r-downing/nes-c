@@ -15,31 +15,32 @@ const uint8_t system_colors[][3] = {
     {0xFF, 0xEF, 0xA6}, {0xFF, 0xF7, 0x9C}, {0xD7, 0xE8, 0x95}, {0xA6, 0xED, 0xAF}, {0xA2, 0xF2, 0xDA},
     {0x99, 0xFF, 0xFC}, {0xDD, 0xDD, 0xDD}, {0x11, 0x11, 0x11}, {0x11, 0x11, 0x11}};
 
-static uint8_t *mirror_palette_ram_addr(C2C02 *const c, uint16_t addr) {
+static uint16_t mirror_palette_ram_addr(uint16_t addr) {
     addr &= 0x1F;
     // $3F10/$3F14/$3F18/$3F1C are mirrors of $3F00/$3F04/$3F08/$3F0C
     if ((0x10 == (addr & 0x13))) {
         addr &= (~0x10);
     }
-    return &c->palette_ram[addr];
+    return addr;
 }
 
-static uint8_t bus_read(C2C02 *const c, uint16_t addr) {
+static uint8_t bus_read(const C2C02 *const c, uint16_t addr) {
     if (addr >= 0x3F00) {
-        return *mirror_palette_ram_addr(c, addr);
+        return c->palette_ram[mirror_palette_ram_addr(addr)];
     }
     return c->bus->read(c->bus_ctx, addr);
 }
 
 static void bus_write(C2C02 *const c, uint16_t addr, uint8_t val) {
     if (addr >= 0x3F00) {
-        *mirror_palette_ram_addr(c, addr) = val;
+        c->palette_ram[mirror_palette_ram_addr(addr)] = val;
         return;
     }
     c->bus->write(c->bus_ctx, addr, val);
 }
 
 uint8_t c2C02_read_reg(C2C02 *const c, const uint8_t addr) {
+    // https://www.nesdev.org/wiki/PPU_registers
     switch (addr & 0x7) {
         // case 0x1: mask not readable
         case 0x2: {  // status
@@ -132,7 +133,7 @@ void c2C02_write_reg(C2C02 *const c, const uint8_t addr, const uint8_t val) {
     }
 }
 
-static void render_palettes_on_bottom(C2C02 *const c) {
+static void render_palettes_on_bottom(const C2C02 *const c) {
     for (int i = 0; i < 32; i++) {
         const uint8_t *color = system_colors[bus_read(c, 0x3F00 + i)];
         c->draw_pixel(c->draw_ctx, i, 240, color[0], color[1], color[2]);
@@ -245,7 +246,16 @@ static void draw_pixel(const C2C02 *const c, const uint8_t x, const uint8_t y, c
     c->draw_pixel(c->draw_ctx, x, y, color[0], color[1], color[2]);
 }
 
-static void simple_render(C2C02 *const c) {
+static uint8_t bit_reverse(uint8_t bits) {
+    uint8_t ret = 0;
+    for (int i = 0; i < 8; i++) {
+        ret = (ret << 1) | (bits & 1);
+        bits >>= 1;
+    }
+    return ret;
+}
+
+static void simple_render(const C2C02 *const c) {
     render_palettes_on_bottom(c);
 
     for (int i = 0; i < 0x03c0; i++) {
@@ -272,6 +282,9 @@ static void simple_render(C2C02 *const c) {
                 } else {
                     cc = bus_read(c, 0x3F00 | (palette_num << 2) | val);
                 }
+                if ((0 == c->mask.background_left) && (0 == coarse_x)) {
+                    continue;
+                }
                 draw_pixel(c, coarse_x * 8 + x, coarse_y * 8 + y, cc);
             }
         }
@@ -279,25 +292,38 @@ static void simple_render(C2C02 *const c) {
 
     if (!c->mask.show_sprites) return;
     for (size_t i = 0; i < sizeof(c->oam.data) / sizeof(oam_sprite); i++) {
+        // for (int i = 63; i >= 0; i--) {  //< sizeof(c->oam.data) / sizeof(oam_sprite); i++) {
         const oam_sprite *const sprite = &((oam_sprite *)c->oam.data)[i];
-        // sprite->attr
-        // Todo - flipping
         // Todo - priority
-        for (int y = sprite->y; y < sprite->y + 8; y++) {
+        for (int y = 0; y < 8; y++) {
+            const int sy = sprite->y + y + 1;
             int lower = bus_read(c, get_pattern_table_address(y, 0, sprite->tile, c->ctrl.sprite_pattern_table));
             int upper = bus_read(c, get_pattern_table_address(y, 1, sprite->tile, c->ctrl.sprite_pattern_table));
-            for (int x = sprite->x; x < sprite->x + 8; x++) {
+            if (!sprite->attributes.flip_horizontal) {  // Todo - flip the bit-shifting order?
+                lower = bit_reverse(lower);
+                upper = bit_reverse(upper);
+            }
+            for (int x = 0; x < 8; x++) {
+                const int sx = sprite->x + x;
                 const int val = ((1 & upper) << 1) | (1 & lower);
                 upper >>= 1;
                 lower >>= 1;
                 int cc;
                 if (val == 0) {
-                    cc = bus_read(c, 0x3F00);
+                    continue;
+                    // cc = bus_read(c, 0x3F00);
                 } else {
                     cc = bus_read(c, 0x3F00 | ((sprite->attributes.palette + 4) << 2) | val);
                 }
-                if (x < 256 && y < 240) {
-                    draw_pixel(c, x, y, cc);
+                if (sx < 256 && sy < 240) {
+                    if ((0 == c->mask.sprites_left) && (sx < 8)) {
+                        continue;
+                    }
+                    if (sprite->attributes.flip_vertical) {
+                        draw_pixel(c, sx, 7 - sy, cc);
+                    } else {
+                        draw_pixel(c, sx, sy, cc);
+                    }
                 }
             }
         }

@@ -86,10 +86,10 @@ typedef struct C2C02 {
         uint8_t u8;
         struct __attribute__((__packed__)) {
             uint8_t grayscale : 1;
-            // Show background in leftmost 8 pixels of screen
-            uint8_t background_left : 1;
-            // Show sprites in leftmost 8 pixels of screen
-            uint8_t sprites_left : 1;
+            uint8_t background_left : 1;  // Show background in leftmost 8 pixels of screen
+
+            uint8_t sprites_left : 1;  // Show sprites in leftmost 8 pixels of screen
+
             uint8_t show_background : 1;
             uint8_t show_sprites : 1;
             uint8_t emphasize_red : 1;
