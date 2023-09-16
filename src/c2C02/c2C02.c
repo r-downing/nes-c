@@ -277,10 +277,31 @@ static void simple_render(C2C02 *const c) {
         }
     }
 
-    // for (size_t i = 0; i < sizeof(c->oam.data) / sizeof(oam_sprite); i++) {
-    //     const oam_sprite *const sprite = &((oam_sprite *)c->oam.data)[i];
-    //     (void)sprite;
-    // }
+    if (!c->mask.show_sprites) return;
+    for (size_t i = 0; i < sizeof(c->oam.data) / sizeof(oam_sprite); i++) {
+        const oam_sprite *const sprite = &((oam_sprite *)c->oam.data)[i];
+        // sprite->attr
+        // Todo - flipping
+        // Todo - priority
+        for (int y = sprite->y; y < sprite->y + 8; y++) {
+            int lower = bus_read(c, get_pattern_table_address(y, 0, sprite->tile, c->ctrl.sprite_pattern_table));
+            int upper = bus_read(c, get_pattern_table_address(y, 1, sprite->tile, c->ctrl.sprite_pattern_table));
+            for (int x = sprite->x; x < sprite->x + 8; x++) {
+                const int val = ((1 & upper) << 1) | (1 & lower);
+                upper >>= 1;
+                lower >>= 1;
+                int cc;
+                if (val == 0) {
+                    cc = bus_read(c, 0x3F00);
+                } else {
+                    cc = bus_read(c, 0x3F00 | ((sprite->attributes.palette + 4) << 2) | val);
+                }
+                if (x < 256 && y < 240) {
+                    draw_pixel(c, x, y, cc);
+                }
+            }
+        }
+    }
 }
 
 /* https://www.nesdev.org/wiki/PPU_nametables
