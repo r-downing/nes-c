@@ -148,7 +148,7 @@ static void render_palettes_on_bottom(const C2C02 *const c) {
 
 // https://www.nesdev.org/wiki/PPU_OAM
 typedef struct __attribute__((__packed__)) {
-    uint8_t y;  // Y position of top of sprite
+    uint8_t y;  // Y position of top of sprite (+1 to get screen position)
 
     union __attribute__((__packed__)) {
         uint8_t tile;  // For 8x8 sprites, this is tile number within pattern table selected in bit 3 of PPUCTRL
@@ -353,7 +353,7 @@ void c2C02_cycle(C2C02 *const c) {
         if ((1 == c->dot) && (241 == c->scanline)) {
             c->status.vblank = 1;
             if (c->ctrl.nmi_at_vblank && c->nmi.callback) {
-                c->nmi.callback(c->nmi.callback);
+                c->nmi.callback(c->nmi.ctx);
                 simple_render(c);
             }
         }

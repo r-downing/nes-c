@@ -43,7 +43,6 @@ typedef struct C2C02 {
         void *ctx;
     } nmi;
 
-
     const C2C02BusInterface *bus;
     void *bus_ctx;
 
@@ -57,6 +56,7 @@ typedef struct C2C02 {
     bool address_latch;
     uint8_t data_read_buffer;
 
+    // https://www.nesdev.org/wiki/PPU_registers
     union __attribute__((__packed__)) {
         uint8_t u8;
         struct __attribute__((__packed__)) {
