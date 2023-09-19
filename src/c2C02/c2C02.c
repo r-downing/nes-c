@@ -367,6 +367,27 @@ void c2C02_cycle(C2C02 *const c) {
         }
 
         if ((c->dot > 0 && c->dot <= 256) || (c->dot > 320 && c->dot <= 336)) {
+            if (c->dot <= 256 && c->scanline >= 0 && c->mask.show_background) {
+                const int xo = ((c->dot - 1) & 7);
+                const uint16_t mux = 0x8000 >> (c->fine_x + xo);
+                const uint8_t p0 = (c->shifters.bg_pattern_shifter_lo & mux) ? 1 : 0;
+                const uint8_t p1 = (c->shifters.bg_pattern_shifter_hi & mux) ? 1 : 0;
+                const int val = ((p1 << 1) | p0);
+
+                const uint8_t b0 = (c->shifters.attr_shifter_lo & mux) ? 1 : 0;
+                const uint8_t b1 = (c->shifters.attr_shifter_hi & mux) ? 1 : 0;
+                const uint8_t palette_num = (b1 << 1) | b0;
+
+                int cc;
+                if (val == 0) {
+                    cc = bus_read(c, 0x3F00);
+                } else {
+                    cc = bus_read(c, 0x3F00 | (palette_num << 2) | val);
+                }
+
+                draw_pixel(c, c->dot - 1, c->scanline, cc);
+            }
+
             switch (c->dot & 7) {
                 case 2: {  // NT
                     c->shifters.next_nt = bus_read(c, 0x2000 | (c->vram_address._u16 & 0xFFF));
@@ -391,27 +412,6 @@ void c2C02_cycle(C2C02 *const c) {
                         bus_read(c, get_pattern_table_address(c->vram_address.fine_y, 1, c->shifters.next_nt,
                                                               c->ctrl.background_pattern_table));
                     _inc_hori_v(c);
-                    if (c->dot <= 256 && c->scanline >= 0 && c->mask.show_background) {
-                        for (int xo = 0; xo < 8; xo++) {
-                            const uint16_t mux = 0x8000 >> (c->fine_x + xo);
-                            const uint8_t p0 = (c->shifters.bg_pattern_shifter_lo & mux) ? 1 : 0;
-                            const uint8_t p1 = (c->shifters.bg_pattern_shifter_hi & mux) ? 1 : 0;
-                            const int val = ((p1 << 1) | p0);
-
-                            const uint8_t b0 = (c->shifters.attr_shifter_lo & mux) ? 1 : 0;
-                            const uint8_t b1 = (c->shifters.attr_shifter_hi & mux) ? 1 : 0;
-                            const uint8_t palette_num = (b1 << 1) | b0;
-
-                            int cc;
-                            if (val == 0) {
-                                cc = bus_read(c, 0x3F00);
-                            } else {
-                                cc = bus_read(c, 0x3F00 | (palette_num << 2) | val);
-                            }
-
-                            draw_pixel(c, c->dot - 8 + xo, c->scanline, cc);
-                        }
-                    }
 
                     // shifters reloaded @ ticks 9, 17, 25..., 257, but it's all internal; should be ok to do early
                     _load_shifters(c);
