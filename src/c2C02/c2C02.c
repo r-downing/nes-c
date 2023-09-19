@@ -392,11 +392,12 @@ void c2C02_cycle(C2C02 *const c) {
             }
 
             switch (c->dot & 7) {
-                case 2: {  // NT
+                case 1: {               // NT
+                    _load_shifters(c);  // shifters reloaded @ ticks 9, 17, 25... missing 257, but doesn't matter
                     c->shifters.next_nt = bus_read(c, 0x2000 | (c->vram_address._u16 & 0xFFF));
                     break;
                 }
-                case 4: {  // AT
+                case 3: {  // AT
                     const uint8_t attr_byte =
                         bus_read(c, get_attribute_table_address(0x2000 | (c->vram_address._u16 & 0xFFF)));
 
@@ -404,21 +405,21 @@ void c2C02_cycle(C2C02 *const c) {
                         get_palette_num(attr_byte, c->vram_address.coarse_x, c->vram_address.coarse_y);
                     break;
                 }
-                case 6: {  // BG lsb
+                case 5: {  // BG lsb
                     c->shifters.next_bg_lo =
                         bus_read(c, get_pattern_table_address(c->vram_address.fine_y, 0, c->shifters.next_nt,
                                                               c->ctrl.background_pattern_table));
                     break;
                 }
-                case 0: {  // BG msb,  inc hori_v, draw last 8, load shifters
+                case 7: {  // BG msb,  inc hori_v, draw last 8, load shifters
                     c->shifters.next_bg_hi =
                         bus_read(c, get_pattern_table_address(c->vram_address.fine_y, 1, c->shifters.next_nt,
                                                               c->ctrl.background_pattern_table));
-                    _inc_hori_v(c);
                     break;
                 }
-                case 1: {
-                    _load_shifters(c);  // shifters reloaded @ ticks 9, 17, 25... missing 257, but doesn't matter
+                case 0: {
+                    _inc_hori_v(c);
+                    break;
                 }
             }  // switch
         }

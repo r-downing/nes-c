@@ -96,7 +96,7 @@ typedef struct C2C02 {
 
     C2C02_loopy_register vram_address;
     C2C02_loopy_register temp_vram_address;
-    uint8_t fine_x;
+    uint8_t fine_x : 3;
 
     uint8_t palette_ram[0x20];
 
