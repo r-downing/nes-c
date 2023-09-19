@@ -409,7 +409,7 @@ void c2C02_cycle(C2C02 *const c) {
                                 cc = bus_read(c, 0x3F00 | (palette_num << 2) | val);
                             }
 
-                            draw_pixel(c, c->dot - 1 - 8 + xo, c->scanline, cc);
+                            draw_pixel(c, c->dot - 8 + xo, c->scanline, cc);
                         }
                     }
 
