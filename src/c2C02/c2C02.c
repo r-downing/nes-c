@@ -104,6 +104,8 @@ void c2C02_write_reg(C2C02 *const c, const uint8_t addr, const uint8_t val) {
     switch (addr & 0x7) {
         case 0x0: {  // control
             c->ctrl.u8 = val;
+            c->temp_vram_address.nametable_x = c->ctrl.nametable_x;  // Todo - confirm this?
+            c->temp_vram_address.nametable_y = c->ctrl.nametable_y;
             break;
         }
         case 0x1: {
@@ -345,68 +347,131 @@ using priority.
 It also does a fetch of a 34th (nametable, attribute, pattern) tuple that is never used, but some mappers rely on this
 fetch for timing purposes.
 */
-void c2C02_cycle(C2C02 *const c) {
-    // https://www.nesdev.org/w/images/default/d/d1/Ntsc_timing.png
 
-    if (c->scanline >= 240) {
-        // idle, post-render
-        if ((1 == c->dot) && (241 == c->scanline)) {
+static void _inc_vert_v(C2C02 *const c) {
+    if (c->mask.show_background || c->mask.show_sprites) {
+        if (++c->vram_address.fine_y == 0) {
+            // rolled over
+            if (++c->vram_address.coarse_y == 30) {
+                c->vram_address.coarse_y = 0;
+                c->vram_address.nametable_y++;
+            }
+        }
+    }
+}
+
+static void _inc_hori_v(C2C02 *const c) {
+    if (c->mask.show_background || c->mask.show_sprites) {
+        if (++c->vram_address.coarse_x == 0) {
+            c->vram_address.nametable_x++;
+        }
+    }
+}
+
+static void _transfer_hori_v(C2C02 *const c) {
+    if (c->mask.show_background || c->mask.show_sprites) {
+        c->vram_address.nametable_x = c->temp_vram_address.nametable_x;
+        c->vram_address.coarse_x = c->temp_vram_address.coarse_x;
+    }
+}
+
+static void _transfer_vert_v(C2C02 *const c) {
+    if (c->mask.show_background || c->mask.show_sprites) {
+        c->vram_address.fine_y = c->temp_vram_address.fine_y;
+        c->vram_address.nametable_y = c->temp_vram_address.nametable_y;
+        c->vram_address.coarse_y = c->temp_vram_address.coarse_y;
+    }
+}
+
+static void _load_shifters(C2C02 *const c) {
+    // Todo - separate the actual shifting of the shifters... Should only happen w/ rendering enabled
+    c->shifters.bg_pattern_shifter_hi = (c->shifters.bg_pattern_shifter_hi << 8) | c->shifters.next_bg_hi;
+    c->shifters.bg_pattern_shifter_lo = (c->shifters.bg_pattern_shifter_lo << 8) | c->shifters.next_bg_lo;
+    c->shifters.attr_shifter_hi = (c->shifters.attr_shifter_hi << 8) | ((c->shifters.next_attr & 2) ? 0xFF : 0);
+    c->shifters.attr_shifter_lo = (c->shifters.attr_shifter_lo << 8) | ((c->shifters.next_attr & 1) ? 0xFF : 0);
+}
+
+void c2C02_cycle(C2C02 *const c) {
+    // https://www.nesdev.org/w/images/default/4/4f/Ppu.svg
+    if (c->scanline < 240) {
+        if ((c->scanline == 0) && (c->dot == 0) && c->mask.show_background && (c->frames & 1)) {
+            c->dot++;  // skip (0,0) on bg-enabled + odd-frame
+        }
+
+        if ((c->dot > 0 && c->dot <= 256) || (c->dot > 320 && c->dot <= 336)) {
+            if ((c->dot & 7) == 0) {  // (8, 16, 24... 256). (328, 336)
+                const uint8_t next_tile_id = bus_read(c, 0x2000 | (c->vram_address._u16 & 0xFFF));
+                const uint8_t attr_byte =
+                    bus_read(c, get_attribute_table_address(0x2000 | (c->vram_address._u16 & 0xFFF)));
+
+                // Todo - make shifter latches locals
+                c->shifters.next_attr = get_palette_num(attr_byte, c->vram_address.coarse_x, c->vram_address.coarse_y);
+
+                c->shifters.next_bg_lo = bus_read(c, get_pattern_table_address(c->vram_address.fine_y, 0, next_tile_id,
+                                                                               c->ctrl.background_pattern_table));
+                c->shifters.next_bg_hi = bus_read(c, get_pattern_table_address(c->vram_address.fine_y, 1, next_tile_id,
+                                                                               c->ctrl.background_pattern_table));
+                _inc_hori_v(c);
+
+                if (c->dot <= 256 && c->scanline >= 0 && c->mask.show_background) {
+                    for (int xo = 0; xo < 8; xo++) {
+                        const uint16_t mux = 0x8000 >> (c->fine_x + xo);
+                        const uint8_t p0 = (c->shifters.bg_pattern_shifter_lo & mux) ? 1 : 0;
+                        const uint8_t p1 = (c->shifters.bg_pattern_shifter_hi & mux) ? 1 : 0;
+                        const int val = ((p1 << 1) | p0);
+
+                        const uint8_t b0 = (c->shifters.attr_shifter_lo & mux) ? 1 : 0;
+                        const uint8_t b1 = (c->shifters.attr_shifter_hi & mux) ? 1 : 0;
+                        const uint8_t palette_num = (b1 << 1) | b0;
+
+                        int cc;
+                        if (val == 0) {
+                            cc = bus_read(c, 0x3F00);
+                        } else {
+                            cc = bus_read(c, 0x3F00 | (palette_num << 2) | val);
+                        }
+
+                        draw_pixel(c, c->dot - 1 + xo, c->scanline, cc);
+                    }
+                }
+
+                // shifters  reloaded during ticks 9, 17, 25, ..., 257, but it's all internal; should be ok to do early
+                _load_shifters(c);
+            }
+        }
+
+        if (c->dot == 256) {
+            _inc_vert_v(c);
+        }
+        if (c->dot == 257) {
+            // _load_shifters(c); // done early at 256
+            _transfer_hori_v(c);
+        }
+        if ((c->dot == 338) || (c->dot == 340)) {
+            // Todo - garbage NT fetch
+        }
+
+        if (c->scanline == -1) {
+            if (c->dot == 1) {
+                c->status.vblank = 0;
+                // simple_render(c);  /////////////////////
+            }
+            if ((280 <= c->dot) && (c->dot <= 304)) {
+                _transfer_vert_v(c);
+            }
+        }
+
+    } else {  // scanlines 240+ idle, except for setting vblank
+        if (c->scanline == 241 && c->dot == 1) {
             c->status.vblank = 1;
             if (c->ctrl.nmi_at_vblank && c->nmi.callback) {
                 c->nmi.callback(c->nmi.ctx);
-                simple_render(c);
             }
         }
-    } else {  // scanline -1 --> 239
-        if ((1 == c->dot) && (-1 == c->scanline)) {
-            c->status.vblank = 0;
-            // Todo - sprite 0 overflow?
-        }
-        if (0 == c->dot) {
-            // idle
-        } else if ((c->dot < 256) || (c->dot >= 321)) {
-            switch (c->dot & 7) {
-                case 1: {
-                    // Todo - NT byte
-                    break;
-                }
-                case 3: {
-                    // Todo - At byte
-                    break;
-                }
-                case 5: {
-                    // Todo - low BG tile byte
-                    break;
-                }
-                case 7: {
-                    // Todo - hight tile byte
-                    break;
-                }
-                case 0: {
-                    // Inc hori(v)
-                    if (c->mask.show_background || c->mask.show_sprites) {
-                        if (++c->vram_address.coarse_x == 0) {
-                            c->vram_address.nametable_x = ~c->vram_address.nametable_x;
-                        }
-                    }
-                    break;
-                }
-            }  // switch
-        } else if (c->dot == 256) {
-            // Todo - inc vert_v
-        } else if (c->dot == 257) {
-            // Todo - hori_v = hori_t
-            // Todo OAMADDR is set to 0 during each of ticks 257–320 (the sprite tile loading interval) of the
-            // pre-render and visible scanlines.
-        }
     }
 
-    if ((339 == c->dot) && (-1 == c->scanline) && (c->mask.show_background || c->mask.show_sprites)) {
-        c->dot++;  // odd frames skip last cycle of pre-render scanline when rendering enabled
-    }
-
+    // progress the scan position
     c->dot++;
-
     if (c->dot > 340) {
         c->dot = 0;
         c->scanline++;

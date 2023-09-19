@@ -27,13 +27,6 @@ typedef union __attribute__((__packed__)) {
         uint16_t fine_y : 3;
         uint16_t : 1;
     };
-    struct __attribute__((__packed__)) {
-        uint16_t : 2;
-        uint16_t coarse_x_attr : 3;  // high bits of coarse... maps to attr table
-        uint16_t : 2;
-        uint16_t coarse_y_attr : 3;
-        uint16_t : 6;
-    };
 
 } C2C02_loopy_register;
 
@@ -111,6 +104,17 @@ typedef struct C2C02 {
         uint8_t data[0x100];
         uint8_t addr;
     } oam;
+
+    struct {
+        uint8_t next_bg_lo;
+        uint8_t next_bg_hi;
+        uint8_t next_attr;
+
+        uint16_t bg_pattern_shifter_lo;
+        uint16_t bg_pattern_shifter_hi;
+        uint16_t attr_shifter_hi;
+        uint16_t attr_shifter_lo;
+    } shifters;
 
     uint32_t frames;
 } C2C02;
