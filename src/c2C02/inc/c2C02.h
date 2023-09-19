@@ -106,9 +106,11 @@ typedef struct C2C02 {
     } oam;
 
     struct {
+        uint8_t next_nt;
+        uint8_t next_attr;
+
         uint8_t next_bg_lo;
         uint8_t next_bg_hi;
-        uint8_t next_attr;
 
         uint16_t bg_pattern_shifter_lo;
         uint16_t bg_pattern_shifter_hi;

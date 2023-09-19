@@ -261,38 +261,6 @@ static uint8_t bit_reverse(uint8_t bits) {
 static void simple_render(const C2C02 *const c) {
     render_palettes_on_bottom(c);
 
-    for (int i = 0; i < 0x03c0; i++) {
-        const int coarse_x = i & 0x1F;
-        const int coarse_y = i >> 5;
-        const uint16_t nt_addr = get_nametable_address(coarse_x, coarse_y, c->ctrl.nametable_x, c->ctrl.nametable_y);
-
-        const uint8_t nt_byte = bus_read(c, nt_addr);
-
-        const uint8_t attr_byte = bus_read(c, get_attribute_table_address(nt_addr));
-
-        const uint8_t palette_num = get_palette_num(attr_byte, coarse_x, coarse_y);
-
-        for (int y = 0; y < 8; y++) {
-            int lower = bus_read(c, get_pattern_table_address(y, 0, nt_byte, c->ctrl.background_pattern_table));
-            int upper = bus_read(c, get_pattern_table_address(y, 1, nt_byte, c->ctrl.background_pattern_table));
-            for (int x = 7; x >= 0; x--) {
-                const int val = ((1 & upper) << 1) | (1 & lower);
-                upper >>= 1;
-                lower >>= 1;
-                int cc;
-                if (val == 0) {
-                    cc = bus_read(c, 0x3F00);
-                } else {
-                    cc = bus_read(c, 0x3F00 | (palette_num << 2) | val);
-                }
-                if ((0 == c->mask.background_left) && (0 == coarse_x)) {
-                    continue;
-                }
-                draw_pixel(c, coarse_x * 8 + x, coarse_y * 8 + y, cc);
-            }
-        }
-    }
-
     if (!c->mask.show_sprites) return;
     for (size_t i = 0; i < sizeof(c->oam.data) / sizeof(oam_sprite); i++) {
         // for (int i = 63; i >= 0; i--) {  //< sizeof(c->oam.data) / sizeof(oam_sprite); i++) {
@@ -399,56 +367,70 @@ void c2C02_cycle(C2C02 *const c) {
         }
 
         if ((c->dot > 0 && c->dot <= 256) || (c->dot > 320 && c->dot <= 336)) {
-            if ((c->dot & 7) == 0) {  // (8, 16, 24... 256). (328, 336)
-                const uint8_t next_tile_id = bus_read(c, 0x2000 | (c->vram_address._u16 & 0xFFF));
-                const uint8_t attr_byte =
-                    bus_read(c, get_attribute_table_address(0x2000 | (c->vram_address._u16 & 0xFFF)));
-
-                // Todo - make shifter latches locals
-                c->shifters.next_attr = get_palette_num(attr_byte, c->vram_address.coarse_x, c->vram_address.coarse_y);
-
-                c->shifters.next_bg_lo = bus_read(c, get_pattern_table_address(c->vram_address.fine_y, 0, next_tile_id,
-                                                                               c->ctrl.background_pattern_table));
-                c->shifters.next_bg_hi = bus_read(c, get_pattern_table_address(c->vram_address.fine_y, 1, next_tile_id,
-                                                                               c->ctrl.background_pattern_table));
-                _inc_hori_v(c);
-
-                if (c->dot <= 256 && c->scanline >= 0 && c->mask.show_background) {
-                    for (int xo = 0; xo < 8; xo++) {
-                        const uint16_t mux = 0x8000 >> (c->fine_x + xo);
-                        const uint8_t p0 = (c->shifters.bg_pattern_shifter_lo & mux) ? 1 : 0;
-                        const uint8_t p1 = (c->shifters.bg_pattern_shifter_hi & mux) ? 1 : 0;
-                        const int val = ((p1 << 1) | p0);
-
-                        const uint8_t b0 = (c->shifters.attr_shifter_lo & mux) ? 1 : 0;
-                        const uint8_t b1 = (c->shifters.attr_shifter_hi & mux) ? 1 : 0;
-                        const uint8_t palette_num = (b1 << 1) | b0;
-
-                        int cc;
-                        if (val == 0) {
-                            cc = bus_read(c, 0x3F00);
-                        } else {
-                            cc = bus_read(c, 0x3F00 | (palette_num << 2) | val);
-                        }
-
-                        draw_pixel(c, c->dot - 1 - 8 + xo, c->scanline, cc);
-                    }
+            switch (c->dot & 7) {
+                case 2: {  // NT
+                    c->shifters.next_nt = bus_read(c, 0x2000 | (c->vram_address._u16 & 0xFFF));
+                    break;
                 }
+                case 4: {  // AT
+                    const uint8_t attr_byte =
+                        bus_read(c, get_attribute_table_address(0x2000 | (c->vram_address._u16 & 0xFFF)));
 
-                // shifters  reloaded during ticks 9, 17, 25, ..., 257, but it's all internal; should be ok to do early
-                _load_shifters(c);
-            }
+                    c->shifters.next_attr =
+                        get_palette_num(attr_byte, c->vram_address.coarse_x, c->vram_address.coarse_y);
+                    break;
+                }
+                case 6: {  // BG lsb
+                    c->shifters.next_bg_lo =
+                        bus_read(c, get_pattern_table_address(c->vram_address.fine_y, 0, c->shifters.next_nt,
+                                                              c->ctrl.background_pattern_table));
+                    break;
+                }
+                case 0: {  // BG msb,  inc hori_v, draw last 8, load shifters
+                    c->shifters.next_bg_hi =
+                        bus_read(c, get_pattern_table_address(c->vram_address.fine_y, 1, c->shifters.next_nt,
+                                                              c->ctrl.background_pattern_table));
+                    _inc_hori_v(c);
+                    if (c->dot <= 256 && c->scanline >= 0 && c->mask.show_background) {
+                        for (int xo = 0; xo < 8; xo++) {
+                            const uint16_t mux = 0x8000 >> (c->fine_x + xo);
+                            const uint8_t p0 = (c->shifters.bg_pattern_shifter_lo & mux) ? 1 : 0;
+                            const uint8_t p1 = (c->shifters.bg_pattern_shifter_hi & mux) ? 1 : 0;
+                            const int val = ((p1 << 1) | p0);
+
+                            const uint8_t b0 = (c->shifters.attr_shifter_lo & mux) ? 1 : 0;
+                            const uint8_t b1 = (c->shifters.attr_shifter_hi & mux) ? 1 : 0;
+                            const uint8_t palette_num = (b1 << 1) | b0;
+
+                            int cc;
+                            if (val == 0) {
+                                cc = bus_read(c, 0x3F00);
+                            } else {
+                                cc = bus_read(c, 0x3F00 | (palette_num << 2) | val);
+                            }
+
+                            draw_pixel(c, c->dot - 1 - 8 + xo, c->scanline, cc);
+                        }
+                    }
+
+                    // shifters reloaded @ ticks 9, 17, 25..., 257, but it's all internal; should be ok to do early
+                    _load_shifters(c);
+                    break;
+                }
+            }  // switch
+        }
+
+        if ((c->dot > 257) && (c->dot < 321)) {
+            // Todo - garbate NT fetches 258+260, ... dot & 7 == 2 or 4, equivalent to NT, AT
         }
 
         if (c->dot == 256) {
             _inc_vert_v(c);
-        }
-        if (c->dot == 257) {
+        } else if (c->dot == 257) {
             // _load_shifters(c); // done early at 256
             _transfer_hori_v(c);
-        }
-        if ((c->dot == 338) || (c->dot == 340)) {
-            // Todo - garbage NT fetch
+        } else if ((c->dot == 338) || (c->dot == 340)) {
+            // Todo - unused NT fetches
         }
 
         if (c->scanline == -1) {
@@ -460,9 +442,9 @@ void c2C02_cycle(C2C02 *const c) {
                 _transfer_vert_v(c);
             }
         }
-
     } else {  // scanlines 240+ idle, except for setting vblank
         if (c->scanline == 241 && c->dot == 1) {
+            // simple_render(c);
             c->status.vblank = 1;
             if (c->ctrl.nmi_at_vblank && c->nmi.callback) {
                 c->nmi.callback(c->nmi.ctx);
