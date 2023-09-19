@@ -52,6 +52,8 @@ uint8_t c2C02_read_reg(C2C02 *const c, const uint8_t addr) {
         }
         // case 0x3: OAM addr not readable
         case 0x4:
+            // Todo -Reading OAMDATA while the PPU is rendering will expose internal OAM accesses during sprite
+            // evaluation and loading; https://www.nesdev.org/wiki/PPU_registers#OAMDATA
             return c->oam.data[c->oam.addr];
         // case 0x5: // scroll not readable
         // case 0x6: // addr not readable
@@ -117,6 +119,7 @@ void c2C02_write_reg(C2C02 *const c, const uint8_t addr, const uint8_t val) {
             break;
         }
         case 0x4: {
+            // Todo - ignore writes during rendering. https://www.nesdev.org/wiki/PPU_registers#OAMDATA
             c->oam.data[c->oam.addr++] = val;
             break;
         }
@@ -422,7 +425,7 @@ void c2C02_cycle(C2C02 *const c) {
                     break;
                 }
             }  // switch
-        }
+        }      // dot 1-256, 321-336
 
         if ((c->dot > 257) && (c->dot < 321)) {
             // Todo - garbate NT fetches 258+260, ... dot & 7 == 2 or 4, equivalent to NT, AT
