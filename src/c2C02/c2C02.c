@@ -1,5 +1,6 @@
 #include <c2C02.h>
 #include <stddef.h>
+#include <string.h>
 
 const uint8_t system_colors[][3] = {
     {0x80, 0x80, 0x80}, {0x00, 0x3D, 0xA6}, {0x00, 0x12, 0xB0}, {0x44, 0x00, 0x96}, {0xA1, 0x00, 0x5E},
@@ -151,6 +152,17 @@ static void render_palettes_on_bottom(const C2C02 *const c) {
     }
 }
 
+typedef union __attribute__((__packed__)) {
+    uint8_t u8;
+    struct __attribute__((__packed__)) {
+        uint8_t palette : 2;          // Palette (4 to 7) of sprite
+        uint8_t : 3;                  // Unimplemented (read 0)
+        uint8_t priority : 1;         // Priority (0: in front of background; 1: behind background)
+        uint8_t flip_horizontal : 1;  // does not change bounding box
+        uint8_t flip_vertical : 1;    // does not change bounding box
+    };
+} oam_sprite_attributes;
+
 // https://www.nesdev.org/wiki/PPU_OAM
 typedef struct __attribute__((__packed__)) {
     uint8_t y;  // Y position of top of sprite (+1 to get screen position)
@@ -163,13 +175,7 @@ typedef struct __attribute__((__packed__)) {
         } _8x16;
     };
 
-    struct __attribute__((__packed__)) {
-        uint8_t palette : 2;          // Palette (4 to 7) of sprite
-        uint8_t : 3;                  // Unimplemented (read 0)
-        uint8_t priority : 1;         // Priority (0: in front of background; 1: behind background)
-        uint8_t flip_horizontal : 1;  // does not change bounding box
-        uint8_t flip_vertical : 1;    // does not change bounding box
-    } attributes;
+    oam_sprite_attributes attributes;
 
     uint8_t x;  // X position of left side of sprite.
 } oam_sprite;
@@ -378,19 +384,19 @@ static void _render_scanlines(C2C02 *const c) {
         c->dot++;  // skip (0,0) on bg-enabled + odd-frame
     }
 
-        if ((c->dot > 0 && c->dot <= 256) || (c->dot > 320 && c->dot <= 336)) {
-            c->shifters.attr_shifter_hi <<= 1;
+    if ((c->dot > 0 && c->dot <= 256) || (c->dot > 320 && c->dot <= 336)) {
+        c->shifters.attr_shifter_hi <<= 1;
         c->shifters.attr_shifter_lo <<= 1;
         c->shifters.bg_pattern_shifter_hi <<= 1;
         c->shifters.bg_pattern_shifter_lo <<= 1;
 
         switch (c->dot & 7) {
             case 1: {               // NT
-                    _load_shifters(c);  // shifters reloaded @ ticks 9, 17, 25... missing 257, but doesn't matter
-                    c->shifters.next_nt = bus_read(c, 0x2000 | (c->vram_address._u16 & 0xFFF));
-                    break;
-                }
-                case 3: {  // AT
+                _load_shifters(c);  // shifters reloaded @ ticks 9, 17, 25... missing 257, but doesn't matter
+                c->shifters.next_nt = bus_read(c, 0x2000 | (c->vram_address._u16 & 0xFFF));
+                break;
+            }
+            case 3: {  // AT
                 const uint8_t attr_byte =
                     bus_read(c, get_attribute_table_address(0x2000 | (c->vram_address._u16 & 0xFFF)));
 
@@ -398,64 +404,133 @@ static void _render_scanlines(C2C02 *const c) {
                 break;
             }
             case 5: {  // BG lsb
-                    c->shifters.next_bg_lo =
-                        bus_read(c, get_pattern_table_address(c->vram_address.fine_y, 0, c->shifters.next_nt,
-                                                              c->ctrl.background_pattern_table));
-                    break;
-                }
-                case 7: {  // BG msb,  inc hori_v, draw last 8, load shifters
-                    c->shifters.next_bg_hi =
-                        bus_read(c, get_pattern_table_address(c->vram_address.fine_y, 1, c->shifters.next_nt,
-                                                              c->ctrl.background_pattern_table));
-                    break;
-                }
-                case 0: {
-                    _inc_hori_v(c);
-                    break;
-                }
-            }  // switch
-        }      // dot 1-256, 321-336
-
-        if ((c->dot > 257) && (c->dot < 321)) {
-            // Todo - garbate NT fetches 258+260, ... dot & 7 == 2 or 4, equivalent to NT, AT
-        }
-
-        if (c->dot == 256) {
-            _inc_vert_v(c);
-        } else if (c->dot == 257) {
-            // _load_shifters(c);
-            _transfer_hori_v(c);
-        } else if ((c->dot == 338) || (c->dot == 340)) {
-            c->shifters.next_nt = bus_read(c, 0x2000 | (c->vram_address._u16 & 0xFFF));  // unused NT fetches
-        }
-
-        if (c->scanline == -1) {
-            if (c->dot == 1) {
-                c->status.vblank = 0;
-                // simple_render(c);  /////////////////////
+                c->shifters.next_bg_lo =
+                    bus_read(c, get_pattern_table_address(c->vram_address.fine_y, 0, c->shifters.next_nt,
+                                                          c->ctrl.background_pattern_table));
+                break;
             }
-            if ((280 <= c->dot) && (c->dot <= 304)) {
+            case 7: {  // BG msb,  inc hori_v, draw last 8, load shifters
+                c->shifters.next_bg_hi =
+                    bus_read(c, get_pattern_table_address(c->vram_address.fine_y, 1, c->shifters.next_nt,
+                                                          c->ctrl.background_pattern_table));
+                break;
+            }
+            case 0: {
+                _inc_hori_v(c);
+                break;
+            }
+        }  // switch
+    }      // dot 1-256, 321-336
+
+    if ((c->dot > 257) && (c->dot < 321)) {
+        // Todo - garbate NT fetches 258+260, ... dot & 7 == 2 or 4, equivalent to NT, AT
+    }
+
+    if (c->dot == 256) {
+        _inc_vert_v(c);
+    } else if (c->dot == 257) {
+        // _load_shifters(c);
+        _transfer_hori_v(c);
+    } else if ((c->dot == 338) || (c->dot == 340)) {
+        c->shifters.next_nt = bus_read(c, 0x2000 | (c->vram_address._u16 & 0xFFF));  // unused NT fetches
+    }
+
+    if (c->scanline == -1) {
+        if (c->dot == 1) {
+            c->status.vblank = 0;
+            // simple_render(c);  /////////////////////
+        }
+        if ((280 <= c->dot) && (c->dot <= 304)) {
             _transfer_vert_v(c);
         }
     }
 
-    if ((c->dot >= 1) && (c->dot <= 256) && (c->scanline >= 0) && c->mask.show_background) {
-        const uint16_t mux = 0x8000 >> c->fine_x;
-        const uint8_t p0 = (c->shifters.bg_pattern_shifter_lo & mux) ? 1 : 0;
-        const uint8_t p1 = (c->shifters.bg_pattern_shifter_hi & mux) ? 1 : 0;
-        const int val = ((p1 << 1) | p0);
+    //// sprite eval - https://www.nesdev.org/wiki/PPU_sprite_evaluation
+    if (c->dot == 64) {  // if((c->dot >= 1) && (c->dot <= 64)) {
+        // Todo - byte-by-byte
+        memset(c->sprite_reg.oam2, 0xFF, sizeof(c->sprite_reg.oam2));
+    } else if (c->dot == 256) {
+        // Todo - load sprites into secondary OAM piecewise
+        c->sprite_reg.n = 0;
+        for (size_t i = 0; i < 64; i++) {
+            const oam_sprite *const sprite = &((oam_sprite *)c->oam.data)[i];
+            if ((c->scanline >= sprite->y) && (c->scanline < (sprite->y + 8))) {
+                // if (((uint8_t)(c->scanline - sprite->y)) < 8) {  // Todo - confirm comparison
+                ((oam_sprite *)(c->sprite_reg.oam2))[c->sprite_reg.n++] = *sprite;
+                if (c->sprite_reg.n >= 8) {
+                    break;  // Todo - buggy sprite overflow...
+                }
+            }
+        }
+    } else if ((c->dot >= 257) && (c->dot <= 320)) {
+        if ((c->dot & 7) == 1) {  // Todo - split reads up into cycles
+            const uint8_t oam2_idx = (c->dot - 257) >> 3;
+            const oam_sprite *const sprite = &((oam_sprite *)(c->sprite_reg.oam2))[oam2_idx];
+            c->sprite_reg.shifters[oam2_idx].attr = sprite->attributes.u8;
+            // Todo - flip, etc
+            c->sprite_reg.shifters[oam2_idx].x = sprite->x;
+            uint8_t fine_y = c->scanline - sprite->y;
+            if (sprite->attributes.flip_vertical) {
+                fine_y = 7 - fine_y;
+            }
+            c->sprite_reg.shifters[oam2_idx].pattern_lo =
+                bus_read(c, get_pattern_table_address(fine_y, 0, sprite->tile, c->ctrl.sprite_pattern_table));
+            c->sprite_reg.shifters[oam2_idx].pattern_hi =
+                bus_read(c, get_pattern_table_address(fine_y, 1, sprite->tile, c->ctrl.sprite_pattern_table));
+            if (!sprite->attributes.flip_horizontal) {
+                c->sprite_reg.shifters[oam2_idx].pattern_lo = bit_reverse(c->sprite_reg.shifters[oam2_idx].pattern_lo);
+                c->sprite_reg.shifters[oam2_idx].pattern_hi = bit_reverse(c->sprite_reg.shifters[oam2_idx].pattern_hi);
+            }
+            // sprite->attributes
+        }
+    }
 
-        const uint8_t b0 = (c->shifters.attr_shifter_lo & mux) ? 1 : 0;
-        const uint8_t b1 = (c->shifters.attr_shifter_hi & mux) ? 1 : 0;
-        const uint8_t palette_num = (b1 << 1) | b0;
+    if ((c->dot >= 1) && (c->dot <= 256) && (c->scanline >= 0)) {
+        int palette_idx = 0;
 
-        int cc;
-        if (val == 0) {
-            cc = bus_read(c, 0x3F00);
-        } else {
-            cc = bus_read(c, 0x3F00 | (palette_num << 2) | val);
+        if (c->mask.show_background) {
+            const uint16_t mux = 0x8000 >> c->fine_x;
+            const uint8_t p0 = (c->shifters.bg_pattern_shifter_lo & mux) ? 1 : 0;
+            const uint8_t p1 = (c->shifters.bg_pattern_shifter_hi & mux) ? 1 : 0;
+            const int val = ((p1 << 1) | p0);
+
+            const uint8_t b0 = (c->shifters.attr_shifter_lo & mux) ? 1 : 0;
+            const uint8_t b1 = (c->shifters.attr_shifter_hi & mux) ? 1 : 0;
+            const uint8_t palette_num = (b1 << 1) | b0;
+
+            palette_idx = (val) ? ((palette_num << 2) | val) : 0;
         }
 
+        if (c->mask.show_sprites) {
+            for (size_t i = 0; i < 8; i++) {
+                if (c->sprite_reg.shifters[i].x != 0) {  // inactive
+                    continue;
+                }
+                const oam_sprite_attributes attrs = {.u8 = c->sprite_reg.shifters[i].attr};
+                const uint8_t p0 = c->sprite_reg.shifters[i].pattern_lo & 1;
+                const uint8_t p1 = c->sprite_reg.shifters[i].pattern_hi & 1;
+                const int val = ((p1 << 1) | p0);
+                if (val) {
+                    if ((palette_idx == 0) || (attrs.priority == 0)) {
+                        palette_idx = ((attrs.palette + 4) << 2) | val;
+                    }
+                    break;  // Todo - confirm stop after first sprite, even if low prio
+                }
+
+                // break;
+            }
+
+            for (size_t i = 0; i < 8; i++) {
+                if (c->sprite_reg.shifters[i].x) {
+                    c->sprite_reg.shifters[i].x--;
+                } else {
+                    c->sprite_reg.shifters[i].pattern_lo >>= 1;
+                    c->sprite_reg.shifters[i].pattern_hi >>= 1;
+                }
+            }
+        }
+
+        const int cc = bus_read(c, 0x3F00 | palette_idx);
         draw_pixel(c, c->dot - 1, c->scanline, cc);
     }
 }

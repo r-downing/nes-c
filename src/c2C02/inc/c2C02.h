@@ -106,6 +106,18 @@ typedef struct C2C02 {
     } oam;
 
     struct {
+        uint8_t oam2[32];
+        uint8_t n;
+
+        struct {
+            uint8_t attr;
+            uint8_t x;
+            uint8_t pattern_lo;
+            uint8_t pattern_hi;
+        } shifters[8];
+    } sprite_reg;
+
+    struct {
         uint8_t next_nt;
         uint8_t next_attr;
 
@@ -116,6 +128,7 @@ typedef struct C2C02 {
         uint16_t bg_pattern_shifter_hi;
         uint16_t attr_shifter_hi;
         uint16_t attr_shifter_lo;
+
     } shifters;
 
     uint32_t frames;
