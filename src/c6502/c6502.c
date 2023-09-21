@@ -8,50 +8,50 @@ static const uint16_t IRQ_ADDR = 0xFFFE;
 static const uint16_t NMI_ADDR = 0xFFFA;
 
 /** read a byte from the bus at the specified address */
-static uint8_t read(const C6502 *const c, const uint16_t addr) {
+inline static uint8_t read(const C6502 *const c, const uint16_t addr) {
     return c->bus_interface->read(c->bus_ctx, addr);
 }
 
 /** write a byte to the bus at the specified address */
-static bool write(const C6502 *const c, const uint16_t addr, const uint8_t val) {
+inline static bool write(const C6502 *const c, const uint16_t addr, const uint8_t val) {
     return c->bus_interface->write(c->bus_ctx, addr, val);
 }
 
 /** return true if there's a page-break between the given addresses */
-static bool page_break(const uint16_t a, const uint16_t b) {
+inline static bool page_break(const uint16_t a, const uint16_t b) {
     return (0xFF00 & a) != (0xFF00 & b);
 }
 
 /** Read 2 bytes at the given address as LE u16 */
-static uint16_t read_u16(const C6502 *const c, const uint16_t addr) {
+inline static uint16_t read_u16(const C6502 *const c, const uint16_t addr) {
     const uint16_t lo = read(c, addr);
     const uint16_t hi = read(c, addr + 1);
     return (hi << 8) | lo;
 }
 
 /** Read next 2 bytes @PC as LE u16, and increment PC by 2 */
-static uint16_t read_u16_pc(C6502 *const c) {
+inline static uint16_t read_u16_pc(C6502 *const c) {
     const uint16_t lo = read(c, c->PC++);
     const uint16_t hi = read(c, c->PC++);
     return (hi << 8) | lo;
 }
 
-static void stack_push(C6502 *const c, uint8_t val) {
+inline static void stack_push(C6502 *const c, uint8_t val) {
     write(c, STACK_BASE + c->SP, val);
     c->SP--;
 }
 
-static void stack_push_u16(C6502 *const c, uint16_t u16) {
+inline static void stack_push_u16(C6502 *const c, uint16_t u16) {
     stack_push(c, (uint8_t)(u16 >> 8));
     stack_push(c, (uint8_t)(u16));
 }
 
-static uint8_t stack_pop(C6502 *const c) {
+inline static uint8_t stack_pop(C6502 *const c) {
     c->SP++;
     return read(c, STACK_BASE + c->SP);
 }
 
-static uint16_t stack_pop_u16(C6502 *const c) {
+inline static uint16_t stack_pop_u16(C6502 *const c) {
     const uint16_t lo = stack_pop(c);
     return (((uint16_t)stack_pop(c)) << 8) | lo;
 }

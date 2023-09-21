@@ -65,7 +65,7 @@ static const C6502BusInterface bus_interface = {
 
 // https://www.nesdev.org/wiki/PPU_memory_map
 
-uint8_t *vram_mirroring(NesBus *bus, uint16_t addr) {
+inline static uint8_t *vram_mirroring(NesBus *const bus, uint16_t addr) {
     const union __attribute__((__packed__)) {
         uint16_t u16;
         struct __attribute__((__packed__)) {

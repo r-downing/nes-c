@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <string.h>
 
-const uint8_t system_colors[][3] = {
+static const uint8_t system_colors[][3] = {
     {0x80, 0x80, 0x80}, {0x00, 0x3D, 0xA6}, {0x00, 0x12, 0xB0}, {0x44, 0x00, 0x96}, {0xA1, 0x00, 0x5E},
     {0xC7, 0x00, 0x28}, {0xBA, 0x06, 0x00}, {0x8C, 0x17, 0x00}, {0x5C, 0x2F, 0x00}, {0x10, 0x45, 0x00},
     {0x05, 0x4A, 0x00}, {0x00, 0x47, 0x2E}, {0x00, 0x41, 0x66}, {0x00, 0x00, 0x00}, {0x05, 0x05, 0x05},
@@ -17,7 +17,7 @@ const uint8_t system_colors[][3] = {
     {0xFF, 0xEF, 0xA6}, {0xFF, 0xF7, 0x9C}, {0xD7, 0xE8, 0x95}, {0xA6, 0xED, 0xAF}, {0xA2, 0xF2, 0xDA},
     {0x99, 0xFF, 0xFC}, {0xDD, 0xDD, 0xDD}, {0x11, 0x11, 0x11}, {0x11, 0x11, 0x11}};
 
-static uint16_t mirror_palette_ram_addr(uint16_t addr) {
+inline static uint16_t mirror_palette_ram_addr(uint16_t addr) {
     addr &= 0x1F;
     // $3F10/$3F14/$3F18/$3F1C are mirrors of $3F00/$3F04/$3F08/$3F0C
     if ((0x10 == (addr & 0x13))) {
@@ -26,14 +26,14 @@ static uint16_t mirror_palette_ram_addr(uint16_t addr) {
     return addr;
 }
 
-static uint8_t bus_read(const C2C02 *const c, uint16_t addr) {
+inline static uint8_t bus_read(const C2C02 *const c, const uint16_t addr) {
     if (addr >= 0x3F00) {
         return c->palette_ram[mirror_palette_ram_addr(addr)];
     }
     return c->bus->read(c->bus_ctx, addr);
 }
 
-static void bus_write(C2C02 *const c, uint16_t addr, uint8_t val) {
+inline static void bus_write(C2C02 *const c, uint16_t addr, uint8_t val) {
     if (addr >= 0x3F00) {
         c->palette_ram[mirror_palette_ram_addr(addr)] = val;
         return;
@@ -191,7 +191,8 @@ typedef union __attribute__((__packed__)) {
     };
 } nametable_addr_t;
 
-static uint16_t get_nametable_address(uint8_t coarse_x, uint8_t coarse_y, uint8_t nametable_x, uint8_t nametable_y) {
+inline static uint16_t get_nametable_address(uint8_t coarse_x, uint8_t coarse_y, uint8_t nametable_x,
+                                             uint8_t nametable_y) {
     return (nametable_addr_t){
         .coarse_x = coarse_x,
         .coarse_y = coarse_y,
@@ -202,7 +203,7 @@ static uint16_t get_nametable_address(uint8_t coarse_x, uint8_t coarse_y, uint8_
         .u16;
 }
 
-static uint16_t get_attribute_table_address(uint16_t nametable_address) {
+inline static uint16_t get_attribute_table_address(uint16_t nametable_address) {
     const nametable_addr_t nt = {.u16 = nametable_address};
 
     // https://www.nesdev.org/wiki/PPU_scrolling#Tile_and_attribute_fetching
@@ -227,8 +228,8 @@ static uint16_t get_attribute_table_address(uint16_t nametable_address) {
         .u16;
 }
 
-static uint16_t get_pattern_table_address(uint8_t fine_y_offset, uint8_t bitplane, uint8_t nametable_value,
-                                          uint8_t pattern_table) {
+inline static uint16_t get_pattern_table_address(uint8_t fine_y_offset, uint8_t bitplane, uint8_t nametable_value,
+                                                 uint8_t pattern_table) {
     // https://www.nesdev.org/wiki/PPU_pattern_tables
     return (union __attribute__((__packed__)) {
                uint16_t u16;
@@ -248,14 +249,16 @@ static uint16_t get_pattern_table_address(uint8_t fine_y_offset, uint8_t bitplan
         .u16;
 }
 
-static uint8_t get_palette_num(uint8_t attribute_value, uint8_t coarse_x, uint8_t coarse_y) {
+inline static uint8_t get_palette_num(uint8_t attribute_value, uint8_t coarse_x, uint8_t coarse_y) {
     const int shift = ((coarse_y & 2) << 1) | (coarse_x & 2);
     return (attribute_value >> shift) & 0b11;
 }
 
-static void draw_pixel(const C2C02 *const c, const uint8_t x, const uint8_t y, const uint8_t system_color) {
-    const uint8_t *const color = system_colors[system_color];
-    c->draw_pixel(c->draw_ctx, x, y, color[0], color[1], color[2]);
+inline static void draw_pixel(const C2C02 *const c, const uint8_t x, const uint8_t y, const uint8_t system_color) {
+    if (c->draw_pixel) {
+        const uint8_t *const color = system_colors[system_color];
+        c->draw_pixel(c->draw_ctx, x, y, color[0], color[1], color[2]);
+    }
 }
 
 static uint8_t bit_reverse(uint8_t bits) {
@@ -267,6 +270,7 @@ static uint8_t bit_reverse(uint8_t bits) {
     return ret;
 }
 
+#if 0
 static void simple_render(const C2C02 *const c) {
     render_palettes_on_bottom(c);
 
@@ -309,6 +313,7 @@ static void simple_render(const C2C02 *const c) {
         }
     }
 }
+#endif
 
 /* https://www.nesdev.org/wiki/PPU_nametables
 Conceptually, the PPU does this 33 times for each scanline:
@@ -466,20 +471,22 @@ static void _render_scanlines(C2C02 *const c) {
         if ((c->dot & 7) == 1) {  // Todo - split reads up into cycles
             const uint8_t oam2_idx = (c->dot - 257) >> 3;
             const oam_sprite *const sprite = &((oam_sprite *)(c->sprite_reg.oam2))[oam2_idx];
-            c->sprite_reg.shifters[oam2_idx].attr = sprite->attributes.u8;
+            __typeof__(&c->sprite_reg.shifters[oam2_idx]) const shifter = &c->sprite_reg.shifters[oam2_idx];
+
+            shifter->attr = sprite->attributes.u8;
             // Todo - flip, etc
-            c->sprite_reg.shifters[oam2_idx].x = sprite->x;
+            shifter->x = sprite->x;
             uint8_t fine_y = c->scanline - sprite->y;
             if (sprite->attributes.flip_vertical) {
                 fine_y = 7 - fine_y;
             }
-            c->sprite_reg.shifters[oam2_idx].pattern_lo =
+            shifter->pattern_lo =
                 bus_read(c, get_pattern_table_address(fine_y, 0, sprite->tile, c->ctrl.sprite_pattern_table));
-            c->sprite_reg.shifters[oam2_idx].pattern_hi =
+            shifter->pattern_hi =
                 bus_read(c, get_pattern_table_address(fine_y, 1, sprite->tile, c->ctrl.sprite_pattern_table));
             if (!sprite->attributes.flip_horizontal) {
-                c->sprite_reg.shifters[oam2_idx].pattern_lo = bit_reverse(c->sprite_reg.shifters[oam2_idx].pattern_lo);
-                c->sprite_reg.shifters[oam2_idx].pattern_hi = bit_reverse(c->sprite_reg.shifters[oam2_idx].pattern_hi);
+                shifter->pattern_lo = bit_reverse(shifter->pattern_lo);
+                shifter->pattern_hi = bit_reverse(shifter->pattern_hi);
             }
             // sprite->attributes
         }
@@ -503,12 +510,13 @@ static void _render_scanlines(C2C02 *const c) {
 
         if (c->mask.show_sprites) {
             for (size_t i = 0; i < 8; i++) {
-                if (c->sprite_reg.shifters[i].x != 0) {  // inactive
+                __typeof__(&c->sprite_reg.shifters[i]) const shifter = &c->sprite_reg.shifters[i];
+                if (shifter->x != 0) {  // inactive
                     continue;
                 }
-                const oam_sprite_attributes attrs = {.u8 = c->sprite_reg.shifters[i].attr};
-                const uint8_t p0 = c->sprite_reg.shifters[i].pattern_lo & 1;
-                const uint8_t p1 = c->sprite_reg.shifters[i].pattern_hi & 1;
+                const oam_sprite_attributes attrs = {.u8 = shifter->attr};
+                const uint8_t p0 = shifter->pattern_lo & 1;
+                const uint8_t p1 = shifter->pattern_hi & 1;
                 const int val = ((p1 << 1) | p0);
                 if (val) {
                     if ((palette_idx == 0) || (attrs.priority == 0)) {
