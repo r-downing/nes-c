@@ -362,53 +362,42 @@ static void _load_shifters(C2C02 *const c) {
     c->shifters.attr_shifter_lo = (c->shifters.attr_shifter_lo) | ((c->shifters.next_attr & 1) ? 0xFF : 0);
 }
 
-void c2C02_cycle(C2C02 *const c) {
-    // https://www.nesdev.org/w/images/default/4/4f/Ppu.svg
-    if (c->scanline < 240) {
-        if ((c->scanline == 0) && (c->dot == 0) && c->mask.show_background && (c->frames & 1)) {
-            c->dot++;  // skip (0,0) on bg-enabled + odd-frame
+// 240-260: idle except setting vblank
+static void _non_render_scanlines(C2C02 *const c) {
+    if (c->scanline == 241 && c->dot == 1) {
+        // simple_render(c);
+        c->status.vblank = 1;
+        if (c->ctrl.nmi_at_vblank && c->nmi.callback) {
+            c->nmi.callback(c->nmi.ctx);
         }
+    }
+}
+
+static void _render_scanlines(C2C02 *const c) {
+    if ((c->scanline == 0) && (c->dot == 0) && c->mask.show_background && (c->frames & 1)) {
+        c->dot++;  // skip (0,0) on bg-enabled + odd-frame
+    }
 
         if ((c->dot > 0 && c->dot <= 256) || (c->dot > 320 && c->dot <= 336)) {
             c->shifters.attr_shifter_hi <<= 1;
-            c->shifters.attr_shifter_lo <<= 1;
-            c->shifters.bg_pattern_shifter_hi <<= 1;
-            c->shifters.bg_pattern_shifter_lo <<= 1;
-            if (c->dot <= 256 && c->scanline >= 0 && c->mask.show_background) {
-                const uint16_t mux = 0x8000 >> c->fine_x;
-                const uint8_t p0 = (c->shifters.bg_pattern_shifter_lo & mux) ? 1 : 0;
-                const uint8_t p1 = (c->shifters.bg_pattern_shifter_hi & mux) ? 1 : 0;
-                const int val = ((p1 << 1) | p0);
+        c->shifters.attr_shifter_lo <<= 1;
+        c->shifters.bg_pattern_shifter_hi <<= 1;
+        c->shifters.bg_pattern_shifter_lo <<= 1;
 
-                const uint8_t b0 = (c->shifters.attr_shifter_lo & mux) ? 1 : 0;
-                const uint8_t b1 = (c->shifters.attr_shifter_hi & mux) ? 1 : 0;
-                const uint8_t palette_num = (b1 << 1) | b0;
-
-                int cc;
-                if (val == 0) {
-                    cc = bus_read(c, 0x3F00);
-                } else {
-                    cc = bus_read(c, 0x3F00 | (palette_num << 2) | val);
-                }
-
-                draw_pixel(c, c->dot - 1, c->scanline, cc);
-            }
-
-            switch (c->dot & 7) {
-                case 1: {               // NT
+        switch (c->dot & 7) {
+            case 1: {               // NT
                     _load_shifters(c);  // shifters reloaded @ ticks 9, 17, 25... missing 257, but doesn't matter
                     c->shifters.next_nt = bus_read(c, 0x2000 | (c->vram_address._u16 & 0xFFF));
                     break;
                 }
                 case 3: {  // AT
-                    const uint8_t attr_byte =
-                        bus_read(c, get_attribute_table_address(0x2000 | (c->vram_address._u16 & 0xFFF)));
+                const uint8_t attr_byte =
+                    bus_read(c, get_attribute_table_address(0x2000 | (c->vram_address._u16 & 0xFFF)));
 
-                    c->shifters.next_attr =
-                        get_palette_num(attr_byte, c->vram_address.coarse_x, c->vram_address.coarse_y);
-                    break;
-                }
-                case 5: {  // BG lsb
+                c->shifters.next_attr = get_palette_num(attr_byte, c->vram_address.coarse_x, c->vram_address.coarse_y);
+                break;
+            }
+            case 5: {  // BG lsb
                     c->shifters.next_bg_lo =
                         bus_read(c, get_pattern_table_address(c->vram_address.fine_y, 0, c->shifters.next_nt,
                                                               c->ctrl.background_pattern_table));
@@ -446,17 +435,37 @@ void c2C02_cycle(C2C02 *const c) {
                 // simple_render(c);  /////////////////////
             }
             if ((280 <= c->dot) && (c->dot <= 304)) {
-                _transfer_vert_v(c);
-            }
+            _transfer_vert_v(c);
         }
+    }
+
+    if ((c->dot >= 1) && (c->dot <= 256) && (c->scanline >= 0) && c->mask.show_background) {
+        const uint16_t mux = 0x8000 >> c->fine_x;
+        const uint8_t p0 = (c->shifters.bg_pattern_shifter_lo & mux) ? 1 : 0;
+        const uint8_t p1 = (c->shifters.bg_pattern_shifter_hi & mux) ? 1 : 0;
+        const int val = ((p1 << 1) | p0);
+
+        const uint8_t b0 = (c->shifters.attr_shifter_lo & mux) ? 1 : 0;
+        const uint8_t b1 = (c->shifters.attr_shifter_hi & mux) ? 1 : 0;
+        const uint8_t palette_num = (b1 << 1) | b0;
+
+        int cc;
+        if (val == 0) {
+            cc = bus_read(c, 0x3F00);
+        } else {
+            cc = bus_read(c, 0x3F00 | (palette_num << 2) | val);
+        }
+
+        draw_pixel(c, c->dot - 1, c->scanline, cc);
+    }
+}
+
+void c2C02_cycle(C2C02 *const c) {
+    // https://www.nesdev.org/w/images/default/4/4f/Ppu.svg
+    if (c->scanline < 240) {
+        _render_scanlines(c);
     } else {  // scanlines 240+ idle, except for setting vblank
-        if (c->scanline == 241 && c->dot == 1) {
-            // simple_render(c);
-            c->status.vblank = 1;
-            if (c->ctrl.nmi_at_vblank && c->nmi.callback) {
-                c->nmi.callback(c->nmi.ctx);
-            }
-        }
+        _non_render_scanlines(c);
     }
 
     // progress the scan position
