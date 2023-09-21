@@ -37,6 +37,7 @@ void spg_init(void) {
 
     s->texture = SDL_CreateTexture(s->renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_TARGET, SCREEN_WIDTH,
                                    SCREEN_HEIGHT);
+    SDL_SetTextureScaleMode(s->texture, SDL_ScaleModeBest);
 }
 
 void spg_handle_events(void) {
