@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 2em;
+            width: 100%;
+        }
+
+        #screen {
+            position: relative;
+        }
+
+        #canvas {
+            border: 1px dotted lime;
+            display: block;
+            margin: auto;
+        }
+
+        #loadroms {
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        #stdout {
+            height: 16em;
+            overflow: auto;
+            border: 1px dotted white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Create the canvas that the C++ code will draw into -->
+    <div id="screen">
+        <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+        <div id="loadroms">
+            <div>
+                <p>Load from file:</p>
+                <input type="file" id="fileloader" onchange="open_file(event)" />
+                <p>Example Roms:</p>
+                <button id="startbutton">tetris_reassembled</button>
+            </div>
+        </div>
+    </div>
+
+    <pre id="stdout"></pre>
+    <br />
+    <a href="https://github.com/r-downing/chip8-wasm"><img
+            src="https://github.githubassets.com/favicons/favicon-dark.png" /></a>
+
+    <!-- Allow the C++ to access the canvas element -->
+    <script type='text/javascript'>
+        const stdout = document.querySelector("#stdout");
+        stdout.textContent += "STDOUT:\n";
+        var Module = {
+            canvas: document.getElementById('canvas'),
+            print: (str) => { stdout.textContent += str + "\n"; }
+        };
+
+        chip8_load_rom = (array_buffer) => {
+            const uint8Arr = new Uint8Array(array_buffer);
+            const num_bytes = uint8Arr.length * uint8Arr.BYTES_PER_ELEMENT;
+            const data_ptr = Module._malloc(num_bytes);
+            const data_on_heap = new Uint8Array(Module.HEAPU8.buffer, data_ptr, num_bytes);
+            data_on_heap.set(uint8Arr);
+            console.log("num_bytes");
+            console.log(num_bytes);
+            const res = Module.ccall('jscallback', 'number', ['number', 'number'], [data_on_heap.byteOffset, uint8Arr.length]);
+            // console.log("res " + res);
+            if (res) {
+                document.querySelector("#loadroms").style.display = "none";
+            }
+            Module._free(data_ptr);
+        };
+
+        let button = document.querySelector("#startbutton");
+        button.onclick = () => {
+            fetch("/tetris_reassembled_ch8/tetris_reassembled.ch8")
+                .then((response) => response.arrayBuffer())
+                .then(chip8_load_rom);
+        }
+
+
+        const open_file = function (e) {
+            const file_reader = new FileReader();
+            file_reader.onload = (event) => {
+                chip8_load_rom(event.target.result);
+            };
+            file_reader.readAsArrayBuffer(e.target.files[0]);
+        };
+
+    </script>
+    {{{ SCRIPT }}}
+</body>
+
+</html>

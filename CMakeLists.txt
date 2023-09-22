@@ -14,6 +14,7 @@ if(NOT EMCC_DETECTED)
 endif()
 
 
-add_compile_options(-Wall -Wextra -Werror -Wwrite-strings -Wno-error=unused-variable -Wno-error=unused-parameter -Wno-error=unused-function -Wno-error=unused-but-set-variable)
+add_compile_options(-Wall -Wextra -Wwrite-strings)
+# add_compile_options(-Wall -Wextra -Werror -Wwrite-strings -Wno-error=unused-variable -Wno-error=unused-parameter -Wno-error=unused-function -Wno-error=unused-but-set-variable -Wno-error=c2x-extensions)
 
 add_subdirectory(src)

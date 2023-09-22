@@ -6,6 +6,24 @@
 #include <nes_cart.h>
 #include <stdbool.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#else
+
+#define EMSCRIPTEN_KEEPALIVE
+static bool quit = false;
+#define emscripten_set_main_loop(func, a, b) \
+    {                                        \
+        while (!quit) {                      \
+            (func)();                        \
+        }                                    \
+    }
+
+static void emscripten_cancel_main_loop() {
+    quit = true;
+}
+#endif
+
 #define SCREEN_WIDTH 256
 #define SCREEN_HEIGHT (240 + 1)
 
@@ -20,7 +38,7 @@ static struct {
 
 NesBus bus = {0};
 
-static typeof(s_ctx) *const s = &s_ctx;  // Todo - make ctx ptr a param
+#define s (&s_ctx)  // Todo - make ctx ptr a param
 
 #define SCALE 4
 
@@ -45,6 +63,8 @@ void spg_handle_events(void) {
     while (SDL_PollEvent(&e)) {
         if (SDL_QUIT == e.type) {
             s->quit_flag = true;
+            SDL_Quit();
+            emscripten_cancel_main_loop();
         } else if ((SDL_KEYDOWN == e.type) || (SDL_KEYUP == e.type)) {
             const int pressed = (SDL_KEYDOWN == e.type) ? 1 : 0;
             switch (e.key.keysym.sym) {
@@ -109,13 +129,7 @@ void render(void *, int x, int y, uint8_t r, uint8_t g, uint8_t b) {
     spg_draw_pixel(x, y, r, g, b);
 }
 
-int main(int argc, char **argv) {
-    (void)argc;
-    nes_cart_init(&bus.cart, argv[1]);
-    nes_bus_init(&bus);
-    bus.ppu.draw_pixel = render;
-    spg_init();
-
+static void main_loop(void) {
 #if 0
     for (int bank = 0; bank < 2; bank++) {
         for (int sx = 0; sx < 32; sx++) {
@@ -145,27 +159,37 @@ int main(int argc, char **argv) {
     // for (int i = 0; i < 21477272 / 4; i++) {
     //     nes_bus_cycle(&bus);
     // }
-    while (!s->quit_flag) {
-        const uint32_t loop_start_ms = SDL_GetTicks();
-        while (bus.ppu.status.vblank) {
-            nes_bus_cycle(&bus);
-        }
-        while (!bus.ppu.status.vblank) {
-            nes_bus_cycle(&bus);
-        }
-
-        SDL_UpdateTexture(s->texture, NULL, scr, sizeof(scr[0]));
-        SDL_RenderCopy(s->renderer, s->texture, NULL, NULL);
-
-        SDL_RenderPresent(s->renderer);
-        spg_handle_events();
-
-        const uint32_t elapsed_ms = SDL_GetTicks() - loop_start_ms;
-        if (elapsed_ms < 17) {
-            SDL_Delay(17 - elapsed_ms);  // Todo - make this better
-        }
+    const uint32_t loop_start_ms = SDL_GetTicks();
+    while (bus.ppu.status.vblank) {
+        nes_bus_cycle(&bus);
+    }
+    while (!bus.ppu.status.vblank) {
+        nes_bus_cycle(&bus);
     }
 
-    SDL_Quit();
+    SDL_UpdateTexture(s->texture, NULL, scr, sizeof(scr[0]));
+    SDL_RenderCopy(s->renderer, s->texture, NULL, NULL);
+
+    SDL_RenderPresent(s->renderer);
+    spg_handle_events();
+
+#ifndef __EMSCRIPTEN__
+    const uint32_t elapsed_ms = SDL_GetTicks() - loop_start_ms;
+    if (elapsed_ms < 17) {
+        SDL_Delay(17 - elapsed_ms);  // Todo - make this better
+    }
+#endif
+}
+
+EMSCRIPTEN_KEEPALIVE
+int main(int argc, char **argv) {
+    (void)argc;
+    nes_cart_init(&bus.cart, "pacman.nes");  // argv[1]);
+    nes_bus_init(&bus);
+    bus.ppu.draw_pixel = render;
+    spg_init();
+    emscripten_set_main_loop(main_loop, 60, 1);
     return 0;
 }
+
+void jscallback(void) {}
