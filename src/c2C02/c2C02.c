@@ -443,6 +443,8 @@ static void _render_scanlines(C2C02 *const c) {
     if (c->scanline == -1) {
         if (c->dot == 1) {
             c->status.vblank = 0;
+            c->status.sprite_0_hit = 0;
+            c->status.sprite_overflow = 0;
             // simple_render(c);  /////////////////////
         }
         if ((280 <= c->dot) && (c->dot <= 304)) {
