@@ -66,7 +66,7 @@ void nes_cart_init(NesCart *const cart, const char *const filename) {
     if (NULL != mapper_table[mapper_num]->init) {
         mapper_table[mapper_num]->init(cart);
     }
-    cart->mirror_type = (NesCartMirrorType)header.flags6.mirroring;
+    cart->mirror_type = header.flags6.mirroring;
 }
 
 bool nes_cart_prg_write(NesCart *cart, uint16_t addr, uint8_t val) {
