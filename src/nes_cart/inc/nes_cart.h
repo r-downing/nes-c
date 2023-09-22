@@ -26,6 +26,7 @@ typedef struct {
 } NesCart;
 
 void nes_cart_init(NesCart *, const char *filename);
+void nes_cart_init_from_data(NesCart *, const uint8_t *buf, size_t buf_size);
 
 void nes_cart_deinit(NesCart *);
 void nes_cart_reset(NesCart *);
