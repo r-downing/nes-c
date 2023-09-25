@@ -129,7 +129,27 @@ void render(void *, int x, int y, uint8_t r, uint8_t g, uint8_t b) {
     spg_draw_pixel(x, y, r, g, b);
 }
 
+#ifdef __EMSCRIPTEN__
+static bool running = false;
+EMSCRIPTEN_KEEPALIVE
+int jscallback(uint8_t *data, size_t length) {
+    nes_cart_init_from_data(&bus.cart, data, length);
+    nes_bus_init(&bus);
+    bus.ppu.draw_pixel = render;
+    running = true;
+    return true;
+}
+#else
+static const bool running = true;
+void load_rom(const char *romfile) {
+    nes_cart_init(&bus.cart, romfile);
+    nes_bus_init(&bus);
+    bus.ppu.draw_pixel = render;
+}
+#endif
+
 static void main_loop(void) {
+    if (!running) return;
 #if 0
     for (int bank = 0; bank < 2; bank++) {
         for (int sx = 0; sx < 32; sx++) {
@@ -184,12 +204,11 @@ static void main_loop(void) {
 EMSCRIPTEN_KEEPALIVE
 int main(int argc, char **argv) {
     (void)argc;
-    nes_cart_init(&bus.cart, "pacman.nes");  // argv[1]);
-    nes_bus_init(&bus);
-    bus.ppu.draw_pixel = render;
+#ifndef __EMSCRIPTEN__
+    load_rom(argv[1]);
+#endif
+
     spg_init();
     emscripten_set_main_loop(main_loop, 60, 1);
     return 0;
 }
-
-void jscallback(void) {}
