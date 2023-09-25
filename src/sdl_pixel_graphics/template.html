@@ -52,16 +52,15 @@
             <div>
                 <p>Load from file:</p>
                 <input type="file" id="fileloader" onchange="open_file(event)" />
-                <p>Example Roms:</p>
-                <button id="startbutton">tetris_reassembled</button>
             </div>
         </div>
     </div>
 
     <pre id="stdout"></pre>
     <br />
-    <a href="https://github.com/r-downing/chip8-wasm"><img
+    <a href="https://github.com/r-downing/nes-c"><img
             src="https://github.githubassets.com/favicons/favicon-dark.png" /></a>
+    <img src="https://github.com/r-downing/nes-c/actions/workflows/tests.yml/badge.svg" />
 
     <!-- Allow the C++ to access the canvas element -->
     <script type='text/javascript'>
@@ -87,13 +86,6 @@
             }
             Module._free(data_ptr);
         };
-
-        let button = document.querySelector("#startbutton");
-        button.onclick = () => {
-            fetch("/tetris_reassembled_ch8/tetris_reassembled.ch8")
-                .then((response) => response.arrayBuffer())
-                .then(chip8_load_rom);
-        }
 
 
         const open_file = function (e) {
