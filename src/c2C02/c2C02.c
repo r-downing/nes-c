@@ -120,8 +120,14 @@ void c2C02_write_reg(C2C02 *const c, const uint8_t addr, const uint8_t val) {
             break;
         }
         case 0x4: {
-            // Todo - ignore writes during rendering. https://www.nesdev.org/wiki/PPU_registers#OAMDATA
-            c->oam.data[c->oam.addr++] = val;
+            // Todo - perform a glitchy increment of OAMADDR, bumping only the high 6 bits (i.e., it bumps the
+            // [n] value in PPU sprite evaluation – it's plausible that it could bump the low bits instead depending on
+            // the current status of sprite evaluation). This extends to DMA transfers via OAMDMA, since that uses
+            // writes to $2004. For emulation purposes, it is probably best to completely ignore writes during
+            // rendering. https://www.nesdev.org/wiki/PPU_registers#OAMDATA
+            if (c->scanline >= 240) {
+                c->oam.data[c->oam.addr++] = val;
+            }
             break;
         }
         case 0x5: {
@@ -270,51 +276,6 @@ static uint8_t bit_reverse(uint8_t bits) {
     return ret;
 }
 
-#if 0
-static void simple_render(const C2C02 *const c) {
-    render_palettes_on_bottom(c);
-
-    if (!c->mask.show_sprites) return;
-    for (size_t i = 0; i < sizeof(c->oam.data) / sizeof(oam_sprite); i++) {
-        // for (int i = 63; i >= 0; i--) {  //< sizeof(c->oam.data) / sizeof(oam_sprite); i++) {
-        const oam_sprite *const sprite = &((oam_sprite *)c->oam.data)[i];
-        // Todo - priority
-        for (int y = 0; y < 8; y++) {
-            const int sy = sprite->y + y + 1;
-            int lower = bus_read(c, get_pattern_table_address(y, 0, sprite->tile, c->ctrl.sprite_pattern_table));
-            int upper = bus_read(c, get_pattern_table_address(y, 1, sprite->tile, c->ctrl.sprite_pattern_table));
-            if (!sprite->attributes.flip_horizontal) {  // Todo - flip the bit-shifting order?
-                lower = bit_reverse(lower);
-                upper = bit_reverse(upper);
-            }
-            for (int x = 0; x < 8; x++) {
-                const int sx = sprite->x + x;
-                const int val = ((1 & upper) << 1) | (1 & lower);
-                upper >>= 1;
-                lower >>= 1;
-                int cc;
-                if (val == 0) {
-                    continue;
-                    // cc = bus_read(c, 0x3F00);
-                } else {
-                    cc = bus_read(c, 0x3F00 | ((sprite->attributes.palette + 4) << 2) | val);
-                }
-                if (sx < 256 && sy < 240) {
-                    if ((0 == c->mask.sprites_left) && (sx < 8)) {
-                        continue;
-                    }
-                    if (sprite->attributes.flip_vertical) {
-                        draw_pixel(c, sx, 7 - sy, cc);
-                    } else {
-                        draw_pixel(c, sx, sy, cc);
-                    }
-                }
-            }
-        }
-    }
-}
-#endif
-
 /* https://www.nesdev.org/wiki/PPU_nametables
 Conceptually, the PPU does this 33 times for each scanline:
 
@@ -434,9 +395,11 @@ static void _render_scanlines(C2C02 *const c) {
     if (c->dot == 256) {
         _inc_vert_v(c);
     } else if (c->dot == 257) {
-        // _load_shifters(c);
         _transfer_hori_v(c);
     } else if ((c->dot == 338) || (c->dot == 340)) {
+        // Both of the bytes fetched here are the same nametable byte that will be fetched at the beginning of the next
+        // scanline (tile 3, in other words). At least one mapper -- MMC5 -- is known to use this string of three
+        // consecutive nametable fetches to clock a scanline counter.  https://www.nesdev.org/wiki/PPU_rendering
         c->shifters.next_nt = bus_read(c, 0x2000 | (c->vram_address._u16 & 0xFFF));  // unused NT fetches
     }
 
@@ -445,7 +408,6 @@ static void _render_scanlines(C2C02 *const c) {
             c->status.vblank = 0;
             c->status.sprite_0_hit = 0;
             c->status.sprite_overflow = 0;
-            // simple_render(c);  /////////////////////
         }
         if ((280 <= c->dot) && (c->dot <= 304)) {
             _transfer_vert_v(c);
@@ -462,7 +424,6 @@ static void _render_scanlines(C2C02 *const c) {
         for (size_t i = 0; i < 64; i++) {
             const oam_sprite *const sprite = &((oam_sprite *)c->oam.data)[i];
             if ((c->scanline >= sprite->y) && (c->scanline < (sprite->y + 8))) {
-                // if (((uint8_t)(c->scanline - sprite->y)) < 8) {  // Todo - confirm comparison
                 ((oam_sprite *)(c->sprite_reg.oam2))[c->sprite_reg.n++] = *sprite;
                 if (c->sprite_reg.n >= 8) {
                     break;  // Todo - buggy sprite overflow...
@@ -476,7 +437,6 @@ static void _render_scanlines(C2C02 *const c) {
             __typeof__(&c->sprite_reg.shifters[oam2_idx]) const shifter = &c->sprite_reg.shifters[oam2_idx];
 
             shifter->attr = sprite->attributes.u8;
-            // Todo - flip, etc
             shifter->x = sprite->x;
             uint8_t fine_y = c->scanline - sprite->y;
             if (sprite->attributes.flip_vertical) {
@@ -490,7 +450,6 @@ static void _render_scanlines(C2C02 *const c) {
                 shifter->pattern_lo = bit_reverse(shifter->pattern_lo);
                 shifter->pattern_hi = bit_reverse(shifter->pattern_hi);
             }
-            // sprite->attributes
         }
     }
 
@@ -526,8 +485,7 @@ static void _render_scanlines(C2C02 *const c) {
                     }
                     break;  // Todo - confirm stop after first sprite, even if low prio
                 }
-
-                // break;
+                // Todo - c->status.sprite_0_hit
             }
 
             for (size_t i = 0; i < 8; i++) {

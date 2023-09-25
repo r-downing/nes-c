@@ -21,6 +21,7 @@ jobs:
         run: cmake --preset emscripten && cmake --build out/build/emscripten --target sdl_pixel_graphics
 
       - name: Move Files
+        # Todo - fix this up
         run: mkdir output && mv out/build/emscripten/src/sdl_pixel_graphics/sdl_pixel_graphics.* output/ && mv output/sdl_pixel_graphics.html output/index.html
 
       - name: Install rsync 📚
