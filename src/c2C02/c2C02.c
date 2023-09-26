@@ -424,9 +424,13 @@ static void _render_scanlines(C2C02 *const c) {
     } else if (c->dot == 256) {
         // Todo - load sprites into secondary OAM piecewise
         c->sprite_reg.n = 0;
+        c->sprite_reg.sprite0_present = false;
         for (size_t i = 0; i < 64; i++) {
             const oam_sprite *const sprite = &((oam_sprite *)c->oam.data)[i];
             if ((c->scanline >= sprite->y) && (c->scanline < (sprite->y + 8))) {
+                if (i == 0) {
+                    c->sprite_reg.sprite0_present = true;
+                }
                 ((oam_sprite *)(c->sprite_reg.oam2))[c->sprite_reg.n++] = *sprite;
                 if (c->sprite_reg.n >= 8) {
                     break;  // Todo - buggy sprite overflow...
@@ -482,13 +486,16 @@ static void _render_scanlines(C2C02 *const c) {
                 const uint8_t p0 = shifter->pattern_lo & 1;
                 const uint8_t p1 = shifter->pattern_hi & 1;
                 const int val = ((p1 << 1) | p0);
+                if ((i == 0) && val && palette_idx && c->sprite_reg.sprite0_present) {
+                    // non-transparent sprite px on non-transparent bg pix for sprite0
+                    c->status.sprite_0_hit = 1;  // Todo - technically sprite_0_hit only happens dot >=2
+                }
                 if (val) {
                     if ((palette_idx == 0) || (attrs.priority == 0)) {
                         palette_idx = ((attrs.palette + 4) << 2) | val;
                     }
                     break;  // Todo - confirm stop after first sprite, even if low prio
                 }
-                // Todo - c->status.sprite_0_hit
             }
 
             for (size_t i = 0; i < 8; i++) {

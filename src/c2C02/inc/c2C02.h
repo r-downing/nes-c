@@ -82,13 +82,13 @@ typedef struct C2C02 {
         uint8_t u8;
         struct __attribute__((__packed__)) {
             uint8_t grayscale : 1;
-            uint8_t background_left : 1;  // Show background in leftmost 8 pixels of screen
+            uint8_t background_left : 1;  // Todo - Show background in leftmost 8 pixels of screen
 
-            uint8_t sprites_left : 1;  // Show sprites in leftmost 8 pixels of screen
+            uint8_t sprites_left : 1;  // Todo - Show sprites in leftmost 8 pixels of screen
 
             uint8_t show_background : 1;
             uint8_t show_sprites : 1;
-            uint8_t emphasize_red : 1;
+            uint8_t emphasize_red : 1;  // Todo
             uint8_t emphasize_green : 1;
             uint8_t emphasize_blue : 1;
         };
@@ -107,6 +107,7 @@ typedef struct C2C02 {
 
     struct {
         uint8_t oam2[32];
+        bool sprite0_present;
         uint8_t n;
 
         struct {
