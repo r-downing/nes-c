@@ -6,13 +6,11 @@ static bool mapper0_prg_write(NesCart *const cart, uint16_t addr, uint8_t val) {
     }
     if (addr < 0x8000) {
         if (NULL == cart->prg_ram) {
-            // ToDo - warn accessing missing prg ram
-            return false;
+            return false;  // ToDo - warn accessing missing prg ram
         }
         cart->prg_ram[addr & ((0x2000 * cart->num_prg_banks) - 1)] = val;
     }
-    // ToDo - warn writing prg mem
-    return false;
+    return false;  // ToDo - warn writing prg mem
     // &mapper->prg_rom[addr & ((mapper->num_prg_banks > 1) ? 0x7FFF : 0x3FFF)];
 }
 
@@ -22,8 +20,7 @@ static bool mapper0_prg_read(NesCart *const cart, uint16_t addr, uint8_t *const 
     }
     if (addr < 0x8000) {
         if (NULL == cart->prg_ram) {
-            // ToDo - warn accessing missing prg ram
-            return false;
+            return false;  // ToDo - warn accessing missing prg ram
         }
         *val_out = cart->prg_ram[addr & ((0x2000 * cart->num_prg_banks) - 1)];
         return true;

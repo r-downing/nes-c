@@ -73,13 +73,6 @@ TEST_GROUP(NesBusTestGroup) {
     }
 };
 
-// TEST(NesBusTestGroup, test_todo) {
-//     mock_nes_cart::expect_nes_cart_prg_write(123, 45);
-//     nes_bus_cpu_write(&bus, 123, 45);
-
-//     // Todo
-// }
-
 TEST(NesBusTestGroup, test_ppu_cart_mirroring) {
     // https://www.nesdev.org/wiki/Mirroring#Nametable_Mirroring
     bus.vram[0][1] = 0xAA;

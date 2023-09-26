@@ -121,7 +121,6 @@ void nes_bus_init(NesBus *const bus) {
 }
 
 void nes_bus_cycle(NesBus *const bus) {
-    // ToDo - ppu cycle
     if (3 == ++bus->cpu_subcycle_count) {
         bus->cpu_subcycle_count = 0;
         c6202_cycle(&bus->cpu);

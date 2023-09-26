@@ -178,7 +178,7 @@ typedef struct __attribute__((__packed__)) {
         struct __attribute__((__packed__)) {
             uint8_t bank : 1;  // Bank ($0000 or $1000) of
             uint8_t tile : 7;  // ile number of top of sprite (0 to 254; bottom half gets the next tile)
-        } _8x16;
+        } _8x16;               // Todo - 8x16 sprite support
     };
 
     oam_sprite_attributes attributes;
@@ -349,6 +349,7 @@ static void _non_render_scanlines(C2C02 *const c) {
 }
 
 static void _render_scanlines(C2C02 *const c) {
+    // Todo - skip certain loads and shifts depending on if rendering enabled
     if ((c->scanline == 0) && (c->dot == 0) && c->mask.show_background && (c->frames & 1)) {
         c->dot++;  // skip (0,0) on bg-enabled + odd-frame
     }

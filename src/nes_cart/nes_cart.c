@@ -96,6 +96,7 @@ void nes_cart_init_from_data(NesCart *const cart, const uint8_t *const buf, size
     _nes_cart_init_from_src(cart, read_from_buf, &(buf_ctx){.buf = buf, .offset = 0, .size = buf_size});
 }
 
+// Todo - inline these nes-cart functions
 bool nes_cart_prg_write(NesCart *cart, uint16_t addr, uint8_t val) {
     return ((MapperInterface *)cart->_priv_intf)->prg_write(cart, addr, val);
 }
