@@ -260,8 +260,11 @@ inline static uint8_t get_palette_num(uint8_t attribute_value, uint8_t coarse_x,
     return (attribute_value >> shift) & 0b11;
 }
 
-inline static void draw_pixel(const C2C02 *const c, const uint8_t x, const uint8_t y, const uint8_t system_color) {
+inline static void draw_pixel(const C2C02 *const c, const uint8_t x, const uint8_t y, uint8_t system_color) {
     if (c->draw_pixel) {
+        if (c->mask.grayscale) {
+            system_color &= 0xF0;
+        }
         const uint8_t *const color = system_colors[system_color];
         c->draw_pixel(c->draw_ctx, x, y, color[0], color[1], color[2]);
     }
