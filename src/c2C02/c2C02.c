@@ -2,6 +2,8 @@
 #include <stddef.h>
 #include <string.h>
 
+#define ARRAY_LEN(arr) (sizeof(arr) / sizeof((arr)[0]))
+
 static const uint8_t system_colors[][3] = {
     {0x80, 0x80, 0x80}, {0x00, 0x3D, 0xA6}, {0x00, 0x12, 0xB0}, {0x44, 0x00, 0x96}, {0xA1, 0x00, 0x5E},
     {0xC7, 0x00, 0x28}, {0xBA, 0x06, 0x00}, {0x8C, 0x17, 0x00}, {0x5C, 0x2F, 0x00}, {0x10, 0x45, 0x00},
@@ -398,8 +400,8 @@ static void _render_scanlines(C2C02 *const c) {
         // Todo - load sprites into secondary OAM piecewise
         c->sprite_reg.n = 0;
         c->sprite_reg.sprite0_present = false;
-        for (size_t i = 0; i < 64; i++) {
-            const _c2C02_sprite *const sprite = &((_c2C02_sprite *)c->oam.u8_arr)[i];
+        for (size_t i = 0; i < ARRAY_LEN(c->oam.sprites); i++) {
+            const _c2C02_sprite *const sprite = &c->oam.sprites[i];
             if ((c->scanline >= sprite->y) && (c->scanline < (sprite->y + 8))) {
                 if (i == 0) {
                     c->sprite_reg.sprite0_present = true;
@@ -454,7 +456,7 @@ static void _render_scanlines(C2C02 *const c) {
         }
 
         if (c->mask.show_sprites) {
-            for (size_t i = 0; i < 8; i++) {
+            for (size_t i = 0; i < ARRAY_LEN(c->sprite_reg.shifters); i++) {
                 __typeof__(&c->sprite_reg.shifters[i]) const shifter = &c->sprite_reg.shifters[i];
                 if (shifter->x != 0) {  // inactive
                     continue;
@@ -475,7 +477,7 @@ static void _render_scanlines(C2C02 *const c) {
                 }
             }
 
-            for (size_t i = 0; i < 8; i++) {
+            for (size_t i = 0; i < ARRAY_LEN(c->sprite_reg.shifters); i++) {
                 if (c->sprite_reg.shifters[i].x) {
                     c->sprite_reg.shifters[i].x--;
                 } else {
