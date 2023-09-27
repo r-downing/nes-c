@@ -55,7 +55,7 @@ uint8_t c2C02_read_reg(C2C02 *const c, const uint8_t addr) {
         case 0x4:
             // Todo -Reading OAMDATA while the PPU is rendering will expose internal OAM accesses during sprite
             // evaluation and loading; https://www.nesdev.org/wiki/PPU_registers#OAMDATA
-            return c->oam.data[c->oam.addr];
+            return c->oam.u8_arr[c->oam.addr];
         // case 0x5: // scroll not readable
         // case 0x6: // addr not readable
         case 0x7: {
@@ -126,7 +126,7 @@ void c2C02_write_reg(C2C02 *const c, const uint8_t addr, const uint8_t val) {
             // writes to $2004. For emulation purposes, it is probably best to completely ignore writes during
             // rendering. https://www.nesdev.org/wiki/PPU_registers#OAMDATA
             if (c->scanline >= 240) {
-                c->oam.data[c->oam.addr++] = val;
+                c->oam.u8_arr[c->oam.addr++] = val;
             }
             break;
         }
@@ -157,34 +157,6 @@ static void render_palettes_on_bottom(const C2C02 *const c) {
         c->draw_pixel(c->draw_ctx, i + 64, 240, color[0], color[1], color[2]);
     }
 }
-
-typedef union __attribute__((__packed__)) {
-    uint8_t u8;
-    struct __attribute__((__packed__)) {
-        uint8_t palette : 2;          // Palette (4 to 7) of sprite
-        uint8_t : 3;                  // Unimplemented (read 0)
-        uint8_t priority : 1;         // Priority (0: in front of background; 1: behind background)
-        uint8_t flip_horizontal : 1;  // does not change bounding box
-        uint8_t flip_vertical : 1;    // does not change bounding box
-    };
-} oam_sprite_attributes;
-
-// https://www.nesdev.org/wiki/PPU_OAM
-typedef struct __attribute__((__packed__)) {
-    uint8_t y;  // Y position of top of sprite (+1 to get screen position)
-
-    union __attribute__((__packed__)) {
-        uint8_t tile;  // For 8x8 sprites, this is tile number within pattern table selected in bit 3 of PPUCTRL
-        struct __attribute__((__packed__)) {
-            uint8_t bank : 1;  // Bank ($0000 or $1000) of
-            uint8_t tile : 7;  // ile number of top of sprite (0 to 254; bottom half gets the next tile)
-        } _8x16;               // Todo - 8x16 sprite support
-    };
-
-    oam_sprite_attributes attributes;
-
-    uint8_t x;  // X position of left side of sprite.
-} oam_sprite;
 
 typedef union __attribute__((__packed__)) {
     uint16_t u16;
@@ -421,18 +393,18 @@ static void _render_scanlines(C2C02 *const c) {
     //// sprite eval - https://www.nesdev.org/wiki/PPU_sprite_evaluation
     if (c->dot == 64) {  // if((c->dot >= 1) && (c->dot <= 64)) {
         // Todo - byte-by-byte
-        memset(c->sprite_reg.oam2, 0xFF, sizeof(c->sprite_reg.oam2));
+        memset(c->oam2.sprites, 0xFF, sizeof(c->oam2.sprites));
     } else if (c->dot == 256) {
         // Todo - load sprites into secondary OAM piecewise
         c->sprite_reg.n = 0;
         c->sprite_reg.sprite0_present = false;
         for (size_t i = 0; i < 64; i++) {
-            const oam_sprite *const sprite = &((oam_sprite *)c->oam.data)[i];
+            const _c2C02_sprite *const sprite = &((_c2C02_sprite *)c->oam.u8_arr)[i];
             if ((c->scanline >= sprite->y) && (c->scanline < (sprite->y + 8))) {
                 if (i == 0) {
                     c->sprite_reg.sprite0_present = true;
                 }
-                ((oam_sprite *)(c->sprite_reg.oam2))[c->sprite_reg.n++] = *sprite;
+                c->oam2.sprites[c->sprite_reg.n++] = *sprite;
                 if (c->sprite_reg.n >= 8) {
                     break;  // Todo - buggy sprite overflow...
                 }
@@ -441,7 +413,7 @@ static void _render_scanlines(C2C02 *const c) {
     } else if ((c->dot >= 257) && (c->dot <= 320)) {
         if ((c->dot & 7) == 1) {  // Todo - split reads up into cycles
             const uint8_t oam2_idx = (c->dot - 257) >> 3;
-            const oam_sprite *const sprite = &((oam_sprite *)(c->sprite_reg.oam2))[oam2_idx];
+            const _c2C02_sprite *const sprite = &c->oam2.sprites[oam2_idx];
             __typeof__(&c->sprite_reg.shifters[oam2_idx]) const shifter = &c->sprite_reg.shifters[oam2_idx];
 
             shifter->attr = sprite->attributes.u8;
@@ -478,12 +450,12 @@ static void _render_scanlines(C2C02 *const c) {
         }
 
         if (c->mask.show_sprites) {
-            for (size_t i = 0; i < 8; i++) {
+            for (size_t i = 0; i < c->sprite_reg.n; i++) {
                 __typeof__(&c->sprite_reg.shifters[i]) const shifter = &c->sprite_reg.shifters[i];
                 if (shifter->x != 0) {  // inactive
                     continue;
                 }
-                const oam_sprite_attributes attrs = {.u8 = shifter->attr};
+                const _c2C02_sprite_attr attrs = {.u8 = shifter->attr};
                 const uint8_t p0 = shifter->pattern_lo & 1;
                 const uint8_t p1 = shifter->pattern_hi & 1;
                 const int val = ((p1 << 1) | p0);

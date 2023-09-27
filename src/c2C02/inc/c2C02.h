@@ -28,7 +28,35 @@ typedef union __attribute__((__packed__)) {
         uint16_t : 1;
     };
 
-} C2C02_loopy_register;
+} _c2C02_loopy_register;
+
+typedef union __attribute__((__packed__)) {
+    uint8_t u8;
+    struct __attribute__((__packed__)) {
+        uint8_t palette : 2;          // Palette (4 to 7) of sprite
+        uint8_t : 3;                  // Unimplemented (read 0)
+        uint8_t priority : 1;         // Priority (0: in front of background; 1: behind background)
+        uint8_t flip_horizontal : 1;  // does not change bounding box
+        uint8_t flip_vertical : 1;    // does not change bounding box
+    };
+} _c2C02_sprite_attr;
+
+// https://www.nesdev.org/wiki/PPU_OAM
+typedef struct __attribute__((__packed__)) {
+    uint8_t y;  // Y position of top of sprite (+1 to get screen position)
+
+    union __attribute__((__packed__)) {
+        uint8_t tile;  // For 8x8 sprites, this is tile number within pattern table selected in bit 3 of PPUCTRL
+        struct __attribute__((__packed__)) {
+            uint8_t bank : 1;  // Bank ($0000 or $1000) of
+            uint8_t tile : 7;  // ile number of top of sprite (0 to 254; bottom half gets the next tile)
+        } _8x16;               // Todo - 8x16 sprite support
+    };
+
+    _c2C02_sprite_attr attributes;
+
+    uint8_t x;  // X position of left side of sprite.
+} _c2C02_sprite;
 
 typedef struct C2C02 {
     struct {
@@ -94,19 +122,26 @@ typedef struct C2C02 {
         };
     } mask;
 
-    C2C02_loopy_register vram_address;
-    C2C02_loopy_register temp_vram_address;
+    _c2C02_loopy_register vram_address;
+    _c2C02_loopy_register temp_vram_address;
     uint8_t fine_x : 3;
 
     uint8_t palette_ram[0x20];
 
     struct {
-        uint8_t data[0x100];
+        union {
+            _c2C02_sprite sprites[64];
+            uint8_t u8_arr[0];
+        };
         uint8_t addr;
     } oam;
 
+    union {
+        _c2C02_sprite sprites[8];
+        uint8_t u8_arr[0];
+    } oam2;
+
     struct {
-        uint8_t oam2[32];
         bool sprite0_present;
         uint8_t n;
 
