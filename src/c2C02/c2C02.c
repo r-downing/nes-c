@@ -430,6 +430,10 @@ static void _render_scanlines(C2C02 *const c) {
                 shifter->pattern_lo = bit_reverse(shifter->pattern_lo);
                 shifter->pattern_hi = bit_reverse(shifter->pattern_hi);
             }
+            if (oam2_idx >= c->sprite_reg.n) {
+                shifter->pattern_lo = 0;  // "Unused sprites are loaded with an all-transparent set of values."
+                shifter->pattern_hi = 0;  // https://www.nesdev.org/wiki/PPU_rendering
+            }
         }
     }
 
@@ -450,7 +454,7 @@ static void _render_scanlines(C2C02 *const c) {
         }
 
         if (c->mask.show_sprites) {
-            for (size_t i = 0; i < c->sprite_reg.n; i++) {
+            for (size_t i = 0; i < 8; i++) {
                 __typeof__(&c->sprite_reg.shifters[i]) const shifter = &c->sprite_reg.shifters[i];
                 if (shifter->x != 0) {  // inactive
                     continue;
@@ -467,7 +471,7 @@ static void _render_scanlines(C2C02 *const c) {
                     if ((palette_idx == 0) || (attrs.priority == 0)) {
                         palette_idx = ((attrs.palette + 4) << 2) | val;
                     }
-                    break;  // Todo - confirm stop after first sprite, even if low prio
+                    break;  // https://www.nesdev.org/wiki/PPU_sprite_priority
                 }
             }
 
