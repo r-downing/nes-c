@@ -30,7 +30,6 @@ int main(int, char *[]) {
     for (i = 0; i < MAX_CYCLE_TIMEOUT; i++) {
         nes_bus_cycle(&bus);
         if (bus.cpu.current_op_cycles_remaining) continue;
-        // c6202_run_next_instruction(&bus.cpu);
         if (bus.cpu_subcycle_count != 0) continue;
         if (TERMINATE_PC == c.PC) {
             break;

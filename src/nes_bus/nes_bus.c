@@ -123,7 +123,7 @@ void nes_bus_init(NesBus *const bus) {
 void nes_bus_cycle(NesBus *const bus) {
     if (3 == ++bus->cpu_subcycle_count) {
         bus->cpu_subcycle_count = 0;
-        c6202_cycle(&bus->cpu);
+        c6502_cycle(&bus->cpu);
     }
     c2C02_cycle(&bus->ppu);
 }

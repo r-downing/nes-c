@@ -66,7 +66,7 @@ TEST(C6502TestGroup, test_0x06) {
     mock_bus::expect_read(124, 51);
     mock_bus::expect_read(51, 0b01001111);
     mock_bus::expect_write(51, 0b10011110, true);
-    CHECK_EQUAL(5, c6202_run_next_instruction(&c));
+    CHECK_EQUAL(5, c6502_run_next_instruction(&c));
     CHECK_EQUAL(c.SR.C, 0);
     CHECK_EQUAL(c.SR.N, 1);
     CHECK_EQUAL(c.SR.Z, 0);
@@ -77,7 +77,7 @@ TEST(C6502TestGroup, test_0x06) {
     mock_bus::expect_read(124, 51);
     mock_bus::expect_read(51, 0b10000000);
     mock_bus::expect_write(51, 0, true);
-    CHECK_EQUAL(5, c6202_run_next_instruction(&c));
+    CHECK_EQUAL(5, c6502_run_next_instruction(&c));
     CHECK_EQUAL(c.SR.C, 1);
     CHECK_EQUAL(c.SR.N, 0);
     CHECK_EQUAL(c.SR.Z, 1);
@@ -89,7 +89,7 @@ TEST(C6502TestGroup, test_0x0A) {
     c.PC = 900;
     mock_bus::expect_read(900, 0x0A);
     c.AC = 0b10000001;
-    CHECK_EQUAL(2, c6202_run_next_instruction(&c));
+    CHECK_EQUAL(2, c6502_run_next_instruction(&c));
     CHECK_EQUAL(c.AC, 0b00000010);
     CHECK_EQUAL(c.PC, 901);
     CHECK_EQUAL(c.SR.N, 0);
@@ -105,7 +105,7 @@ TEST(C6502TestGroup, test_0x0E) {
     mock_bus::expect_read(2002, 0x12);
     mock_bus::expect_read(0x1234, 0b01010101);
     mock_bus::expect_write(0x1234, 0b10101010, true);
-    CHECK_EQUAL(6, c6202_run_next_instruction(&c));
+    CHECK_EQUAL(6, c6502_run_next_instruction(&c));
     CHECK_EQUAL(c.PC, 2003);
 }
 
@@ -116,21 +116,21 @@ TEST(C6502TestGroup, test_0x10) {
     mock_bus::expect_read(2001, 124);
 
     c.SR.N = 0;
-    CHECK_EQUAL(4, c6202_run_next_instruction(&c));
+    CHECK_EQUAL(4, c6502_run_next_instruction(&c));
     CHECK_EQUAL(c.PC, 2126);
 
     c.PC = 2000;
     mock_bus::expect_read(2000, 0x10);
     mock_bus::expect_read(2001, -124);
     c.SR.N = 0;
-    CHECK_EQUAL(3, c6202_run_next_instruction(&c));
+    CHECK_EQUAL(3, c6502_run_next_instruction(&c));
     CHECK_EQUAL(c.PC, 2000 - 122);
 
     c.PC = 2000;
     mock_bus::expect_read(2000, 0x10);
     mock_bus::expect_read(2001, -124);
     c.SR.N = 1;
-    CHECK_EQUAL(2, c6202_run_next_instruction(&c));
+    CHECK_EQUAL(2, c6502_run_next_instruction(&c));
     CHECK_EQUAL(c.PC, 2002);
 }
 
@@ -145,7 +145,7 @@ TEST(C6502TestGroup, test_0x11) {
     mock_bus::expect_read(0x3434, 0b11001100);
 
     c.AC = 0b00000001;
-    CHECK_EQUAL(5, c6202_run_next_instruction(&c));
+    CHECK_EQUAL(5, c6502_run_next_instruction(&c));
     CHECK_EQUAL(c.AC, 0b11001101);
     CHECK_EQUAL(c.SR.Z, 0);
     CHECK_EQUAL(c.SR.N, 1);
@@ -158,7 +158,7 @@ TEST(C6502TestGroup, test_0x11) {
     mock_bus::expect_read(35, 0x34);
     mock_bus::expect_read(0x3502, 0b10);
     c.AC = 0b1;
-    CHECK_EQUAL(6, c6202_run_next_instruction(&c));
+    CHECK_EQUAL(6, c6502_run_next_instruction(&c));
     CHECK_EQUAL(c.AC, 0b11);
     CHECK_EQUAL(c.SR.Z, 0);
     CHECK_EQUAL(c.SR.N, 0);
@@ -171,7 +171,7 @@ TEST(C6502TestGroup, test_0x15) {
     mock_bus::expect_read(801, 0x30);
     mock_bus::expect_read(0x30, 0b1010);
     c.AC = 0b1001;
-    CHECK_EQUAL(4, c6202_run_next_instruction(&c));
+    CHECK_EQUAL(4, c6502_run_next_instruction(&c));
     CHECK_EQUAL(c.AC, 0b1011);
 }
 
@@ -183,7 +183,7 @@ TEST(C6502TestGroup, test_0x16) {
     c.X = 0x82;
     mock_bus::expect_read(7, 0b00001111);
     mock_bus::expect_write(7, 0b00011110, true);
-    CHECK_EQUAL(6, c6202_run_next_instruction(&c));
+    CHECK_EQUAL(6, c6502_run_next_instruction(&c));
     CHECK_EQUAL(c.PC, 1002);
 }
 
@@ -195,7 +195,7 @@ TEST(C6502TestGroup, test_0x18) {
     c.SR.u8 = ~0;
     c.SR.C = 1;
 
-    CHECK_EQUAL(2, c6202_run_next_instruction(&c));
+    CHECK_EQUAL(2, c6502_run_next_instruction(&c));
     CHECK_EQUAL(c.PC, 501);
     CHECK_EQUAL(c.SR.C, 0);
     CHECK_EQUAL(c.SR.u8, 0b11111110);

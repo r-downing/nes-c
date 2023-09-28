@@ -874,7 +874,7 @@ static void fetch_and_execute(C6502 *const c) {
     op->op_handler(c, op);
 }
 
-void c6202_cycle(C6502 *const c) {
+void c6502_cycle(C6502 *const c) {
     c->total_cycles++;
     if (0 == c->current_op_cycles_remaining) {
         fetch_and_execute(c);
@@ -882,11 +882,11 @@ void c6202_cycle(C6502 *const c) {
     c->current_op_cycles_remaining--;
 }
 
-int c6202_run_next_instruction(C6502 *const c) {
+int c6502_run_next_instruction(C6502 *const c) {
     int ret = 0;
     do {
         ret++;
-        c6202_cycle(c);
+        c6502_cycle(c);
     } while (c->current_op_cycles_remaining);
     return ret;
 }

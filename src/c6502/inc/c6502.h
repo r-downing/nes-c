@@ -45,6 +45,6 @@ void c6502_reset(C6502 *);
 void c6502_irq(C6502 *);
 void c6502_nmi(C6502 *);
 
-void c6202_cycle(C6502 *);
+void c6502_cycle(C6502 *);
 
-int c6202_run_next_instruction(C6502 *);
+int c6502_run_next_instruction(C6502 *);
