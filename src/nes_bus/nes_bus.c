@@ -121,11 +121,12 @@ void nes_bus_init(NesBus *const bus) {
 }
 
 void nes_bus_cycle(NesBus *const bus) {
+    c2C02_cycle(&bus->ppu);
+
     if (3 == ++bus->cpu_subcycle_count) {
         bus->cpu_subcycle_count = 0;
         c6502_cycle(&bus->cpu);
     }
-    c2C02_cycle(&bus->ppu);
 }
 
 void nes_bus_reset(NesBus *const bus) {
