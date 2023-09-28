@@ -426,7 +426,7 @@ static void _render_scanlines(C2C02 *const c) {
         if ((c->dot & 7) == 1) {  // Todo - split reads up into cycles
             const uint8_t oam2_idx = (c->dot - 257) >> 3;
             const _c2C02_sprite *const sprite = &c->oam2.sprites[oam2_idx];
-            __typeof__(&c->sprite_reg.shifters[oam2_idx]) const shifter = &c->sprite_reg.shifters[oam2_idx];
+            typeof(&c->sprite_reg.shifters[oam2_idx]) const shifter = &c->sprite_reg.shifters[oam2_idx];
 
             shifter->attr = sprite->attributes.u8;
             shifter->x = sprite->x;
@@ -467,7 +467,7 @@ static void _render_scanlines(C2C02 *const c) {
 
         if (c->mask.show_sprites) {
             for (size_t i = 0; i < ARRAY_LEN(c->sprite_reg.shifters); i++) {
-                __typeof__(&c->sprite_reg.shifters[i]) const shifter = &c->sprite_reg.shifters[i];
+                typeof(&c->sprite_reg.shifters[i]) const shifter = &c->sprite_reg.shifters[i];
                 if (shifter->x != 0) {  // inactive
                     continue;
                 }

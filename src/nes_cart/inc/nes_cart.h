@@ -10,15 +10,10 @@ typedef enum {
 } NesCartMirrorType;
 
 typedef struct {
-    size_t size;
-    uint8_t *buf;
-} _ubuf;
-
-typedef struct {
-    _ubuf prg_rom;
-    _ubuf chr_rom;
-    _ubuf prg_ram;
-    _ubuf chr_ram;
+    struct {
+        size_t size;
+        uint8_t *buf;
+    } prg_rom, chr_rom, prg_ram, chr_ram;
 
     const void *_priv_intf;
     void *_priv_data;

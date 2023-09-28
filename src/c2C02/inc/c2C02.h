@@ -9,28 +9,6 @@ typedef struct {
 } C2C02BusInterface;
 
 typedef union __attribute__((__packed__)) {
-    uint16_t _u16;
-    struct __attribute__((__packed__)) {
-        uint16_t addr : 14;
-        uint16_t : 2;
-    };
-    struct __attribute__((__packed__)) {
-        uint8_t lo;
-        uint8_t hi : 6;
-        uint8_t : 2;
-    };
-    struct __attribute__((__packed__)) {
-        uint16_t coarse_x : 5;
-        uint16_t coarse_y : 5;
-        uint16_t nametable_x : 1;
-        uint16_t nametable_y : 1;
-        uint16_t fine_y : 3;
-        uint16_t : 1;
-    };
-
-} _c2C02_loopy_register;
-
-typedef union __attribute__((__packed__)) {
     uint8_t u8;
     struct __attribute__((__packed__)) {
         uint8_t palette : 2;          // Palette (4 to 7) of sprite
@@ -125,8 +103,28 @@ typedef struct C2C02 {
         };
     } mask;
 
-    _c2C02_loopy_register vram_address;
-    _c2C02_loopy_register temp_vram_address;
+    // loopy register. https://www.nesdev.org/wiki/PPU_scrolling
+    union __attribute__((__packed__)) {
+        uint16_t _u16;
+        struct __attribute__((__packed__)) {
+            uint16_t addr : 14;
+            uint16_t : 2;
+        };
+        struct __attribute__((__packed__)) {
+            uint8_t lo;
+            uint8_t hi : 6;
+            uint8_t : 2;
+        };
+        struct __attribute__((__packed__)) {
+            uint16_t coarse_x : 5;
+            uint16_t coarse_y : 5;
+            uint16_t nametable_x : 1;
+            uint16_t nametable_y : 1;
+            uint16_t fine_y : 3;
+            uint16_t : 1;
+        };
+    } vram_address, temp_vram_address;
+
     uint8_t fine_x : 3;
 
     uint8_t palette_ram[0x20];
@@ -145,7 +143,7 @@ typedef struct C2C02 {
     } oam2;
 
     struct {
-        bool sprite0_present;
+        bool sprite0_present;  // sprite0-hit possible. oam.sprites[0] in oam2.sprites[0]
         uint8_t n;
 
         struct {
