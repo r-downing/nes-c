@@ -180,10 +180,10 @@ static void main_loop(void) {
     //     nes_bus_cycle(&bus);
     // }
     const uint32_t loop_start_ms = SDL_GetTicks();
-    while (bus.ppu.status.vblank) {
+    while (bus.ppu.scanline == -1) {
         nes_bus_cycle(&bus);
     }
-    while (!bus.ppu.status.vblank) {
+    while (bus.ppu.scanline != -1) {
         nes_bus_cycle(&bus);
     }
 
