@@ -74,6 +74,9 @@ typedef struct C2C02 {
     int dot;
     int scanline;
 
+    int clocks;
+    int last_status_read_clocks;
+
     bool address_latch;
     uint8_t data_read_buffer;
 

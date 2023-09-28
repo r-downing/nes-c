@@ -48,6 +48,7 @@ uint8_t c2C02_read_reg(C2C02 *const c, const uint8_t addr) {
     switch (addr & 0x7) {
         // case 0x1: mask not readable
         case 0x2: {  // status
+            c->last_status_read_clocks = c->clocks;
             const uint8_t ret = (c->status.u8 & 0xE0) | (0 /* Todo - ppu stale data */);
             c->status.vblank = 0;
             c->address_latch = false;
@@ -313,11 +314,20 @@ static void _load_shifters(C2C02 *const c) {
 
 // 240-260: idle except setting vblank
 static void _non_render_scanlines(C2C02 *const c) {
-    if (c->scanline == 241 && c->dot == 1) {
-        // simple_render(c);
-        c->status.vblank = 1;
-        if (c->ctrl.nmi_at_vblank && c->nmi.callback) {
-            c->nmi.callback(c->nmi.ctx);
+    const int clocks_since_status = c->clocks - c->last_status_read_clocks;
+
+    // https://www.nesdev.org/wiki/PPU_frame_timing#VBL_Flag_Timing
+    // Reading one PPU clock before reads it as clear and never sets the flag or generates NMI for that frame. Reading
+    // on the same PPU clock or one later reads it as set, clears it, and suppresses the NMI for that frame
+    if (c->scanline == 241) {
+        if (c->dot == 0) {
+            if (clocks_since_status > 0) {
+                c->status.vblank = 1;
+            }
+        } else if (c->dot == 1) {
+            if (c->status.vblank && c->ctrl.nmi_at_vblank && c->nmi.callback) {
+                c->nmi.callback(c->nmi.ctx);
+            }
         }
     }
 }
@@ -501,6 +511,7 @@ void c2C02_cycle(C2C02 *const c) {
     }
 
     // progress the scan position
+    c->clocks++;
     c->dot++;
     if (c->dot > 340) {
         c->dot = 0;
