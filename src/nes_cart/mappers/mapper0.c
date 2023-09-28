@@ -5,13 +5,12 @@ static bool mapper0_prg_write(NesCart *const cart, uint16_t addr, uint8_t val) {
         return false;
     }
     if (addr < 0x8000) {
-        if (NULL == cart->prg_ram) {
+        if (NULL == cart->prg_ram.buf) {
             return false;  // ToDo - warn accessing missing prg ram
         }
-        cart->prg_ram[addr & ((0x2000 * cart->num_prg_banks) - 1)] = val;
+        cart->prg_ram.buf[addr & (cart->prg_ram.size - 1)] = val;
     }
     return false;  // ToDo - warn writing prg mem
-    // &mapper->prg_rom[addr & ((mapper->num_prg_banks > 1) ? 0x7FFF : 0x3FFF)];
 }
 
 static bool mapper0_prg_read(NesCart *const cart, uint16_t addr, uint8_t *const val_out) {
@@ -19,32 +18,39 @@ static bool mapper0_prg_read(NesCart *const cart, uint16_t addr, uint8_t *const 
         return false;
     }
     if (addr < 0x8000) {
-        if (NULL == cart->prg_ram) {
+        if (NULL == cart->prg_ram.buf) {
             return false;  // ToDo - warn accessing missing prg ram
         }
-        *val_out = cart->prg_ram[addr & ((0x2000 * cart->num_prg_banks) - 1)];
+        *val_out = cart->prg_ram.buf[addr & (cart->prg_ram.size - 1)];
         return true;
     }
 
-    *val_out = cart->prg_rom[addr & ((cart->num_prg_banks > 1) ? 0x7FFF : 0x3FFF)];
+    *val_out = cart->prg_rom.buf[addr & (cart->prg_rom.size - 1)];
     return true;
 }
 
 static bool mapper0_ppu_write(NesCart *const cart, uint16_t addr, uint8_t val) {
-    (void)cart;
-    (void)addr;
-    (void)val;
-    // Todo - chr-ram
+    if (addr >= 0x2000) {
+        return false;
+    }
+    if (cart->chr_ram.buf) {
+        cart->chr_ram.buf[addr] = val;
+        return true;
+    }
     return false;
 }
 
 static bool mapper0_ppu_read(NesCart *const cart, uint16_t addr, uint8_t *const val_out) {
-    if (addr < 0x2000) {
-        *val_out = cart->chr_rom[addr];
+    if (addr >= 0x2000) {
+        return false;
+    }
+    if (cart->chr_ram.buf) {
+        *val_out = cart->chr_ram.buf[addr];
         return true;
     }
-    // Todo - chr-ram
-    return false;
+
+    *val_out = cart->chr_rom.buf[addr];
+    return true;
 }
 
 const MapperInterface mapper0 = {

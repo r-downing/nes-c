@@ -36,10 +36,10 @@ TEST(NesCartTestGroup, test_gamepad_none_pressed) {
     nes_cart_init_from_data(&cart, buf, sizeof(buf));
     CHECK_EQUAL(cart.mirror_type, NES_CART_MIRROR_VERTICAL);
 
-    CHECK_EQUAL(cart.num_prg_banks, 1);
-    CHECK_EQUAL(cart.num_chr_banks, 2);
-    CHECK_EQUAL(cart.prg_rom[0], 0x10);
-    CHECK_EQUAL(cart.prg_rom[0x3FFF], 111);
-    CHECK_EQUAL(cart.chr_rom[0], 123);
-    CHECK_EQUAL(cart.chr_rom[0x3000], 45);
+    CHECK_EQUAL(cart.prg_rom.size, 0x4000);
+    CHECK_EQUAL(cart.chr_rom.size, 0x4000);
+    CHECK_EQUAL(cart.prg_rom.buf[0], 0x10);
+    CHECK_EQUAL(cart.prg_rom.buf[0x3FFF], 111);
+    CHECK_EQUAL(cart.chr_rom.buf[0], 123);
+    CHECK_EQUAL(cart.chr_rom.buf[0x3000], 45);
 }

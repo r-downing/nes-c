@@ -17,9 +17,10 @@ void nes_cart_deinit(NesCart *cart) {
     if (mapper->deinit) {
         mapper->deinit(cart);
     }
-    free((void *)cart->chr_rom);
-    free((void *)cart->prg_rom);
-    free(cart->prg_ram);
+    free(cart->chr_rom.buf);
+    free(cart->prg_rom.buf);
+    free(cart->chr_ram.buf);
+    free(cart->prg_ram.buf);
 }
 
 void nes_cart_reset(NesCart *cart) {
@@ -64,16 +65,22 @@ static void _nes_cart_init_from_src(NesCart *const cart, size_t (*read_func)(voi
         uint8_t trainer[512];
         read_func(arg, trainer, sizeof(trainer));
     }
-    cart->num_prg_banks = header.prg_rom_size_16KB;
-    cart->num_chr_banks = header.chr_rom_size_8KB;
-    cart->prg_rom = malloc(header.prg_rom_size_16KB * 0x4000);
-    read_func(arg, (void *)cart->prg_rom, (header.prg_rom_size_16KB * 0x4000));
-    cart->chr_rom = malloc(header.chr_rom_size_8KB * 0x2000);
-    read_func(arg, (void *)cart->chr_rom, (header.chr_rom_size_8KB * 0x2000));
+
+    cart->prg_rom.size = header.prg_rom_size_16KB * 0x4000;
+    cart->prg_rom.buf = malloc(cart->prg_rom.size);
+    read_func(arg, cart->prg_rom.buf, cart->prg_rom.size);
+
+    if (0 != header.chr_rom_size_8KB) {
+        cart->chr_rom.size = header.chr_rom_size_8KB * 0x2000;
+        cart->chr_rom.buf = malloc(cart->chr_rom.size);
+        read_func(arg, cart->chr_rom.buf, cart->chr_rom.size);
+    } else {
+        cart->chr_ram.buf = malloc(0x2000);  // Todo - nes2.0 supports chr-ram size
+    }
 
     if (header.flags6.has_pers_mem) {
-        cart->num_prg_ram_banks = (header.prg_ram_size_8KB ? header.prg_ram_size_8KB : 1);
-        cart->prg_ram = malloc(cart->num_prg_ram_banks * 0x2000);
+        cart->prg_ram.size = (header.prg_ram_size_8KB ? header.prg_ram_size_8KB : 1) * 0x2000;
+        cart->prg_ram.buf = malloc(cart->prg_ram.size);
     }
 
     const size_t mapper_num = (header.flags7.mapper_high << 4) | header.flags6.mapper_low;
