@@ -155,18 +155,23 @@ typedef struct C2C02 {
     } sprite_reg;
 
     struct {
-        uint8_t next_nt;
-        uint8_t next_attr;
+        struct {
+            uint8_t nt;
+            uint8_t attr;
+            struct {
+                uint8_t lo;
+                uint8_t hi;
+            } pattern;
+        } next;
 
-        uint8_t next_bg_lo;
-        uint8_t next_bg_hi;
+        struct {
+            struct {
+                uint16_t lo;
+                uint16_t hi;
+            } pattern, attr;
+        } shifters;
 
-        uint16_t bg_pattern_shifter_lo;
-        uint16_t bg_pattern_shifter_hi;
-        uint16_t attr_shifter_hi;
-        uint16_t attr_shifter_lo;
-
-    } shifters;
+    } bg_reg;
 
     uint32_t frames;
 } C2C02;

@@ -149,6 +149,7 @@ void c2C02_write_reg(C2C02 *const c, const uint8_t addr, const uint8_t val) {
     }
 }
 
+#if 0
 static void render_palettes_on_bottom(const C2C02 *const c) {
     for (int i = 0; i < 32; i++) {
         const uint8_t *color = system_colors[bus_read(c, 0x3F00 + i)];
@@ -160,6 +161,7 @@ static void render_palettes_on_bottom(const C2C02 *const c) {
         c->draw_pixel(c->draw_ctx, i + 64, 240, color[0], color[1], color[2]);
     }
 }
+#endif
 
 typedef union __attribute__((__packed__)) {
     uint16_t u16;
@@ -306,10 +308,12 @@ static void _transfer_vert_v(C2C02 *const c) {
 
 static void _load_shifters(C2C02 *const c) {
     // Todo - separate the actual shifting of the shifters... Should only happen w/ rendering enabled
-    c->shifters.bg_pattern_shifter_hi = (c->shifters.bg_pattern_shifter_hi) | c->shifters.next_bg_hi;
-    c->shifters.bg_pattern_shifter_lo = (c->shifters.bg_pattern_shifter_lo) | c->shifters.next_bg_lo;
-    c->shifters.attr_shifter_hi = (c->shifters.attr_shifter_hi) | ((c->shifters.next_attr & 2) ? 0xFF : 0);
-    c->shifters.attr_shifter_lo = (c->shifters.attr_shifter_lo) | ((c->shifters.next_attr & 1) ? 0xFF : 0);
+    typeof(&c->bg_reg.shifters) const shifters = &c->bg_reg.shifters;
+    typeof(&c->bg_reg.next) const next = &c->bg_reg.next;
+    shifters->pattern.hi = shifters->pattern.hi | next->pattern.hi;
+    shifters->pattern.lo = shifters->pattern.lo | next->pattern.lo;
+    shifters->attr.hi = shifters->attr.hi | ((next->attr & 2) ? 0xFF : 0);
+    shifters->attr.lo = shifters->attr.lo | ((next->attr & 1) ? 0xFF : 0);
 }
 
 // 240-260: idle except setting vblank
@@ -339,33 +343,33 @@ static void _render_scanlines(C2C02 *const c) {
     }
 
     if ((c->dot > 0 && c->dot <= 256) || (c->dot > 320 && c->dot <= 336)) {
-        c->shifters.attr_shifter_hi <<= 1;
-        c->shifters.attr_shifter_lo <<= 1;
-        c->shifters.bg_pattern_shifter_hi <<= 1;
-        c->shifters.bg_pattern_shifter_lo <<= 1;
+        c->bg_reg.shifters.attr.hi <<= 1;
+        c->bg_reg.shifters.attr.lo <<= 1;
+        c->bg_reg.shifters.pattern.hi <<= 1;
+        c->bg_reg.shifters.pattern.lo <<= 1;
 
         switch (c->dot & 7) {
             case 1: {               // NT
                 _load_shifters(c);  // shifters reloaded @ ticks 9, 17, 25... missing 257, but doesn't matter
-                c->shifters.next_nt = bus_read(c, 0x2000 | (c->vram_address._u16 & 0xFFF));
+                c->bg_reg.next.nt = bus_read(c, 0x2000 | (c->vram_address._u16 & 0xFFF));
                 break;
             }
             case 3: {  // AT
                 const uint8_t attr_byte =
                     bus_read(c, get_attribute_table_address(0x2000 | (c->vram_address._u16 & 0xFFF)));
 
-                c->shifters.next_attr = get_palette_num(attr_byte, c->vram_address.coarse_x, c->vram_address.coarse_y);
+                c->bg_reg.next.attr = get_palette_num(attr_byte, c->vram_address.coarse_x, c->vram_address.coarse_y);
                 break;
             }
             case 5: {  // BG lsb
-                c->shifters.next_bg_lo =
-                    bus_read(c, get_pattern_table_address(c->vram_address.fine_y, 0, c->shifters.next_nt,
+                c->bg_reg.next.pattern.lo =
+                    bus_read(c, get_pattern_table_address(c->vram_address.fine_y, 0, c->bg_reg.next.nt,
                                                           c->ctrl.background_pattern_table));
                 break;
             }
             case 7: {  // BG msb,  inc hori_v, draw last 8, load shifters
-                c->shifters.next_bg_hi =
-                    bus_read(c, get_pattern_table_address(c->vram_address.fine_y, 1, c->shifters.next_nt,
+                c->bg_reg.next.pattern.hi =
+                    bus_read(c, get_pattern_table_address(c->vram_address.fine_y, 1, c->bg_reg.next.nt,
                                                           c->ctrl.background_pattern_table));
                 break;
             }
@@ -388,7 +392,7 @@ static void _render_scanlines(C2C02 *const c) {
         // Both of the bytes fetched here are the same nametable byte that will be fetched at the beginning of the next
         // scanline (tile 3, in other words). At least one mapper -- MMC5 -- is known to use this string of three
         // consecutive nametable fetches to clock a scanline counter.  https://www.nesdev.org/wiki/PPU_rendering
-        c->shifters.next_nt = bus_read(c, 0x2000 | (c->vram_address._u16 & 0xFFF));  // unused NT fetches
+        c->bg_reg.next.nt = bus_read(c, 0x2000 | (c->vram_address._u16 & 0xFFF));  // unused NT fetches
     }
 
     if (c->scanline == -1) {
@@ -453,13 +457,14 @@ static void _render_scanlines(C2C02 *const c) {
         int palette_idx = 0;
 
         if (c->mask.show_background) {
+            typeof(&c->bg_reg.shifters) const shifters = &c->bg_reg.shifters;
             const uint16_t mux = 0x8000 >> c->fine_x;
-            const uint8_t p0 = (c->shifters.bg_pattern_shifter_lo & mux) ? 1 : 0;
-            const uint8_t p1 = (c->shifters.bg_pattern_shifter_hi & mux) ? 1 : 0;
+            const uint8_t p0 = (shifters->pattern.lo & mux) ? 1 : 0;
+            const uint8_t p1 = (shifters->pattern.hi & mux) ? 1 : 0;
             const int val = ((p1 << 1) | p0);
 
-            const uint8_t b0 = (c->shifters.attr_shifter_lo & mux) ? 1 : 0;
-            const uint8_t b1 = (c->shifters.attr_shifter_hi & mux) ? 1 : 0;
+            const uint8_t b0 = (shifters->attr.lo & mux) ? 1 : 0;
+            const uint8_t b1 = (shifters->attr.hi & mux) ? 1 : 0;
             const uint8_t palette_num = (b1 << 1) | b0;
 
             palette_idx = (val) ? ((palette_num << 2) | val) : 0;
