@@ -15,3 +15,5 @@ file(COPY assets/nestest.nes DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 find_package(Python COMPONENTS Interpreter REQUIRED)
 add_test(NAME test_nestest COMMAND ${Python_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/nes_test_driver.py" ${CMAKE_CURRENT_BINARY_DIR}/test_nestest "${CMAKE_CURRENT_SOURCE_DIR}/assets/nestest.log")
+
+add_subdirectory(nes_test_roms)

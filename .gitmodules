@@ -4,3 +4,6 @@
 [submodule "lib/SDL"]
 	path = lib/SDL
 	url = git@github.com:libsdl-org/SDL.git
+[submodule "tests/nes_test_roms/nes-test-roms"]
+	path = tests/nes_test_roms/nes-test-roms
+	url = git@github.com:r-downing/nes-test-roms.git
