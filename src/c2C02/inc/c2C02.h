@@ -42,6 +42,8 @@ typedef struct C2C02 {
         void *ctx;
     } nmi;
 
+    bool pending_nmi;
+
     const C2C02BusInterface *bus;
     void *bus_ctx;
 

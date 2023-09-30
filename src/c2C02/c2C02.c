@@ -51,6 +51,7 @@ uint8_t c2C02_read_reg(C2C02 *const c, const uint8_t addr) {
             c->last_status_read_clocks = c->clocks;
             const uint8_t ret = (c->status.u8 & 0xE0) | (0 /* Todo - ppu stale data */);
             c->status.vblank = 0;
+            c->pending_nmi = false;
             c->address_latch = false;
             return ret;
         }
@@ -112,6 +113,7 @@ void c2C02_write_reg(C2C02 *const c, const uint8_t addr, const uint8_t val) {
             c->ctrl.u8 = val;
             c->temp_vram_address.nametable_x = c->ctrl.nametable_x;  // Todo - confirm this?
             c->temp_vram_address.nametable_y = c->ctrl.nametable_y;
+            // Todo - trigger nmi if enabling during vblank. not sure of exact timing
             break;
         }
         case 0x1: {
@@ -329,9 +331,14 @@ static void _non_render_scanlines(C2C02 *const c) {
                 c->status.vblank = 1;
             }
         } else if (c->dot == 1) {
-            if (c->status.vblank && c->ctrl.nmi_at_vblank && c->nmi.callback) {
+            if (c->status.vblank && c->nmi.callback) {
+                c->pending_nmi = true;
+            }
+        } else if (c->dot == 2) {
+            if (c->pending_nmi && c->ctrl.nmi_at_vblank && c->nmi.callback) {
                 c->nmi.callback(c->nmi.ctx);
             }
+            c->pending_nmi = false;
         }
     }
 }
@@ -396,7 +403,7 @@ static void _render_scanlines(C2C02 *const c) {
     }
 
     if (c->scanline == -1) {
-        if (c->dot == 1) {
+        if (c->dot == 0) {
             c->status.vblank = 0;
             c->status.sprite_0_hit = 0;
             c->status.sprite_overflow = 0;
