@@ -1,6 +1,6 @@
 #include "../nes_cart_impl.h"
 
-static bool mapper0_prg_write(NesCart *const cart, uint16_t addr, uint8_t val) {
+static bool mapper0_cpu_write(NesCart *const cart, uint16_t addr, uint8_t val) {
     if (addr < 0x6000) {
         return false;
     }
@@ -13,7 +13,7 @@ static bool mapper0_prg_write(NesCart *const cart, uint16_t addr, uint8_t val) {
     return false;  // ToDo - warn writing prg mem
 }
 
-static bool mapper0_prg_read(NesCart *const cart, uint16_t addr, uint8_t *const val_out) {
+static bool mapper0_cpu_read(NesCart *const cart, uint16_t addr, uint8_t *const val_out) {
     if (addr < 0x6000) {
         return false;
     }
@@ -53,9 +53,9 @@ static bool mapper0_ppu_read(NesCart *const cart, uint16_t addr, uint8_t *const 
     return true;
 }
 
-const MapperInterface mapper0 = {
-    .prg_write = mapper0_prg_write,
-    .prg_read = mapper0_prg_read,
+const struct NesCartMapperInterface mapper0 = {
+    .cpu_write = mapper0_cpu_write,
+    .cpu_read = mapper0_cpu_read,
     .ppu_write = mapper0_ppu_write,
     .ppu_read = mapper0_ppu_read,
 };

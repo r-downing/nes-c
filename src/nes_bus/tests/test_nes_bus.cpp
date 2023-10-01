@@ -7,54 +7,56 @@ extern "C" {
 #include <string.h>
 }
 
-bool nes_cart_prg_write(NesCart *, uint16_t addr, uint8_t val) {
+static bool cpu_write(NesCart *, uint16_t addr, uint8_t val) {
     mock().actualCall(__func__).withParameter("addr", addr).withParameter("val", val);
     return mock().returnBoolValueOrDefault(false);
 }
 
-bool nes_cart_prg_read(NesCart *, uint16_t addr, uint8_t *val_out) {
+static bool cpu_read(NesCart *, uint16_t addr, uint8_t *val_out) {
     mock().actualCall(__func__).withParameter("addr", addr).withOutputParameter("val_out", val_out);
     return mock().returnBoolValueOrDefault(false);
 }
 
-bool nes_cart_ppu_write(NesCart *, uint16_t addr, uint8_t val) {
+static bool ppu_write(NesCart *, uint16_t addr, uint8_t val) {
     mock().actualCall(__func__).withParameter("addr", addr).withParameter("val", val);
     return mock().returnBoolValueOrDefault(false);
 }
 
-bool nes_cart_ppu_read(NesCart *, uint16_t addr, uint8_t *val_out) {
+static bool ppu_read(NesCart *, uint16_t addr, uint8_t *val_out) {
     mock().actualCall(__func__).withParameter("addr", addr).withOutputParameter("val_out", val_out);
     return mock().returnBoolValueOrDefault(false);
 }
+
+static const NesCart::NesCartMapperInterface mapper = {
+    .cpu_write = cpu_write,
+    .cpu_read = cpu_read,
+    .ppu_write = ppu_write,
+    .ppu_read = ppu_read,
+    NULL,
+    NULL,
+    NULL,
+};
 
 namespace mock_nes_cart {
-void expect_nes_cart_prg_write(uint16_t addr, uint8_t val, bool ret = false) {
-    mock()
-        .expectOneCall("nes_cart_prg_write")
-        .withParameter("addr", addr)
-        .withParameter("val", val)
-        .andReturnValue(ret);
+void expect_cpu_write(uint16_t addr, uint8_t val, bool ret = false) {
+    mock().expectOneCall("cpu_write").withParameter("addr", addr).withParameter("val", val).andReturnValue(ret);
 }
 
-void expect_nes_cart_prg_read(uint16_t addr, uint8_t val, bool ret = false) {
+void expect_cpu_read(uint16_t addr, uint8_t val, bool ret = false) {
     mock()
-        .expectOneCall("nes_cart_prg_read")
+        .expectOneCall("cpu_read")
         .withParameter("addr", addr)
         .withOutputParameterReturning("val_out", &val, sizeof(val))
         .andReturnValue(ret);
 }
 
-void expect_nes_cart_ppu_write(uint16_t addr, uint8_t val, bool ret = false) {
-    mock()
-        .expectOneCall("nes_cart_ppu_write")
-        .withParameter("addr", addr)
-        .withParameter("val", val)
-        .andReturnValue(ret);
+void expect_ppu_write(uint16_t addr, uint8_t val, bool ret = false) {
+    mock().expectOneCall("ppu_write").withParameter("addr", addr).withParameter("val", val).andReturnValue(ret);
 }
 
-void expect_nes_cart_ppu_read(uint16_t addr, uint8_t val, bool ret = false) {
+void expect_ppu_read(uint16_t addr, uint8_t val, bool ret = false) {
     mock()
-        .expectOneCall("nes_cart_ppu_read")
+        .expectOneCall("ppu_read")
         .withParameter("addr", addr)
         .withOutputParameterReturning("val_out", &val, sizeof(val))
         .andReturnValue(ret);
@@ -65,7 +67,9 @@ void expect_nes_cart_ppu_read(uint16_t addr, uint8_t val, bool ret = false) {
 TEST_GROUP(NesBusTestGroup) {
     NesBus bus;
 
-    TEST_SETUP() {}
+    TEST_SETUP() {
+        bus.cart.mapper = &mapper;
+    }
 
     TEST_TEARDOWN() {
         mock().checkExpectations();
@@ -82,45 +86,45 @@ TEST(NesBusTestGroup, test_ppu_cart_mirroring) {
 
     uint8_t ret;
 
-    mock_nes_cart::expect_nes_cart_ppu_read(0x2001, 0, false);
+    mock_nes_cart::expect_ppu_read(0x2001, 0, false);
     ret = nes_bus_ppu_read(&bus, 0x2001);
     CHECK_EQUAL(ret, 0xAA);
 
-    mock_nes_cart::expect_nes_cart_ppu_read(0x2401, 0, false);
+    mock_nes_cart::expect_ppu_read(0x2401, 0, false);
     ret = nes_bus_ppu_read(&bus, 0x2401);
     CHECK_EQUAL(ret, 0xAA);
 
-    mock_nes_cart::expect_nes_cart_ppu_read(0x2801, 0, false);
+    mock_nes_cart::expect_ppu_read(0x2801, 0, false);
     ret = nes_bus_ppu_read(&bus, 0x2801);
     CHECK_EQUAL(ret, 0xBB);
 
-    mock_nes_cart::expect_nes_cart_ppu_read(0x2C01, 0, false);
+    mock_nes_cart::expect_ppu_read(0x2C01, 0, false);
     ret = nes_bus_ppu_read(&bus, 0x2C01);
     CHECK_EQUAL(ret, 0xBB);
 
     bus.cart.mirror_type = NES_CART_MIRROR_VERTICAL;
 
-    mock_nes_cart::expect_nes_cart_ppu_read(0x2001, 0, false);
+    mock_nes_cart::expect_ppu_read(0x2001, 0, false);
     ret = nes_bus_ppu_read(&bus, 0x2001);
     CHECK_EQUAL(ret, 0xAA);
 
-    mock_nes_cart::expect_nes_cart_ppu_read(0x2401, 0, false);
+    mock_nes_cart::expect_ppu_read(0x2401, 0, false);
     ret = nes_bus_ppu_read(&bus, 0x2401);
     CHECK_EQUAL(ret, 0xBB);
 
-    mock_nes_cart::expect_nes_cart_ppu_read(0x2801, 0, false);
+    mock_nes_cart::expect_ppu_read(0x2801, 0, false);
     ret = nes_bus_ppu_read(&bus, 0x2801);
     CHECK_EQUAL(ret, 0xAA);
 
-    mock_nes_cart::expect_nes_cart_ppu_read(0x2C01, 0, false);
+    mock_nes_cart::expect_ppu_read(0x2C01, 0, false);
     ret = nes_bus_ppu_read(&bus, 0x2C01);
     CHECK_EQUAL(ret, 0xBB);
 
-    mock_nes_cart::expect_nes_cart_ppu_read(0x3C01, 0, false);
+    mock_nes_cart::expect_ppu_read(0x3C01, 0, false);
     ret = nes_bus_ppu_read(&bus, 0x3C01);
     CHECK_EQUAL(ret, 0xBB);
 
-    mock_nes_cart::expect_nes_cart_ppu_write(0x3C01, 0xEE);
+    mock_nes_cart::expect_ppu_write(0x3C01, 0xEE);
     nes_bus_ppu_write(&bus, 0x3C01, 0xEE);
     CHECK_EQUAL(0xEE, bus.vram[1][1]);
 }

@@ -6,27 +6,27 @@
 
 #include "nes_cart_impl.h"
 
-extern const MapperInterface mapper0;
+extern const struct NesCartMapperInterface mapper0;
 
-static const MapperInterface *const mapper_table[] = {
+static const struct NesCartMapperInterface *const mapper_table[] = {
     &mapper0,
 };
 
 void nes_cart_deinit(NesCart *cart) {
-    const MapperInterface *const mapper = (MapperInterface *)cart->_priv_intf;
-    if (mapper->deinit) {
-        mapper->deinit(cart);
+    const typeof(cart->mapper->deinit) deinit = cart->mapper->deinit;
+    if (deinit) {
+        deinit(cart);
     }
-    free(cart->chr_rom.buf);
-    free(cart->prg_rom.buf);
+    free((void *)cart->chr_rom.buf);
+    free((void *)cart->prg_rom.buf);
     free(cart->chr_ram.buf);
     free(cart->prg_ram.buf);
 }
 
 void nes_cart_reset(NesCart *cart) {
-    const MapperInterface *const mapper = (MapperInterface *)cart->_priv_intf;
-    if (mapper->reset) {
-        mapper->reset(cart);
+    const typeof(cart->mapper->reset) reset = cart->mapper->reset;
+    if (reset) {
+        reset(cart);
     }
 }
 
@@ -68,12 +68,12 @@ static void _nes_cart_init_from_src(NesCart *const cart, size_t (*read_func)(voi
 
     cart->prg_rom.size = header.prg_rom_size_16KB * 0x4000;
     cart->prg_rom.buf = malloc(cart->prg_rom.size);
-    read_func(arg, cart->prg_rom.buf, cart->prg_rom.size);
+    read_func(arg, (void *)cart->prg_rom.buf, cart->prg_rom.size);
 
     if (0 != header.chr_rom_size_8KB) {
         cart->chr_rom.size = header.chr_rom_size_8KB * 0x2000;
         cart->chr_rom.buf = malloc(cart->chr_rom.size);
-        read_func(arg, cart->chr_rom.buf, cart->chr_rom.size);
+        read_func(arg, (void *)cart->chr_rom.buf, cart->chr_rom.size);
     } else {
         cart->chr_ram.buf = malloc(0x2000);  // Todo - nes2.0 supports chr-ram size
     }
@@ -85,7 +85,7 @@ static void _nes_cart_init_from_src(NesCart *const cart, size_t (*read_func)(voi
 
     const size_t mapper_num = (header.flags7.mapper_high << 4) | header.flags6.mapper_low;
     assert(mapper_num < (sizeof(mapper_table) / sizeof(mapper_table[0])));
-    cart->_priv_intf = mapper_table[mapper_num];
+    cart->mapper = mapper_table[mapper_num];
     if (NULL != mapper_table[mapper_num]->init) {
         mapper_table[mapper_num]->init(cart);
     }
@@ -101,21 +101,4 @@ void nes_cart_init(NesCart *const cart, const char *const filename) {
 
 void nes_cart_init_from_data(NesCart *const cart, const uint8_t *const buf, size_t buf_size) {
     _nes_cart_init_from_src(cart, read_from_buf, &(buf_ctx){.buf = buf, .offset = 0, .size = buf_size});
-}
-
-// Todo - inline these nes-cart functions
-bool nes_cart_prg_write(NesCart *cart, uint16_t addr, uint8_t val) {
-    return ((MapperInterface *)cart->_priv_intf)->prg_write(cart, addr, val);
-}
-
-bool nes_cart_prg_read(NesCart *cart, uint16_t addr, uint8_t *val_out) {
-    return ((MapperInterface *)cart->_priv_intf)->prg_read(cart, addr, val_out);
-}
-
-bool nes_cart_ppu_write(NesCart *const cart, uint16_t addr, uint8_t val) {
-    return ((MapperInterface *)cart->_priv_intf)->ppu_write(cart, addr, val);
-}
-
-bool nes_cart_ppu_read(NesCart *const cart, uint16_t addr, uint8_t *val_out) {
-    return ((MapperInterface *)cart->_priv_intf)->ppu_read(cart, addr, val_out);
 }

@@ -4,18 +4,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-// https://www.nesdev.org/wiki/Mapper
-
-typedef struct {
-    bool (*prg_write)(NesCart *, uint16_t addr, uint8_t val);
-    bool (*prg_read)(NesCart *, uint16_t addr, uint8_t *val_out);
-    bool (*ppu_write)(NesCart *, uint16_t addr, uint8_t val);
-    bool (*ppu_read)(NesCart *, uint16_t addr, uint8_t *val_out);
-    void (*init)(NesCart *);
-    void (*deinit)(NesCart *);
-    void (*reset)(NesCart *);
-} MapperInterface;
-
 // https://www.nesdev.org/wiki/INES
 static const uint8_t header_cookie[4] = {'N', 'E', 'S', 0x1A};
 

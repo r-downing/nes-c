@@ -12,7 +12,7 @@ static void nes_bus_ppu_dma(NesBus *bus, const uint16_t page) {
 }
 
 bool nes_bus_cpu_write(NesBus *bus, uint16_t addr, uint8_t val) {
-    if (nes_cart_prg_write(&bus->cart, addr, val)) {
+    if (nes_cart_cpu_write(&bus->cart, addr, val)) {
         return true;
     }
     if (addr < 0x2000) {
@@ -39,7 +39,7 @@ bool nes_bus_cpu_write(NesBus *bus, uint16_t addr, uint8_t val) {
 
 uint8_t nes_bus_cpu_read(NesBus *bus, uint16_t addr) {
     uint8_t val;
-    if (nes_cart_prg_read(&bus->cart, addr, &val)) {
+    if (nes_cart_cpu_read(&bus->cart, addr, &val)) {
         return val;
     }
     if (addr < 0x2000) {
@@ -102,7 +102,7 @@ uint8_t nes_bus_ppu_read(NesBus *bus, uint16_t addr) {
     if ((0x2000 <= addr) && (addr < 0x3F00)) {
         return *vram_mirroring(bus, addr);
     }
-    return 0;  // should never get something < 0x3000
+    return 0;  // should never get something < 0x3F00
 }
 
 static const C2C02BusInterface ppu_bus_interface = {
