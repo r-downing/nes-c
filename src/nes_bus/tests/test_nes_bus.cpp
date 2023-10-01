@@ -46,7 +46,7 @@ void expect_nes_cart_prg_read(uint16_t addr, uint8_t val, bool ret = false) {
 
 void expect_nes_cart_ppu_write(uint16_t addr, uint8_t val, bool ret = false) {
     mock()
-        .expectOneCall("nes_cart_prg_write")
+        .expectOneCall("nes_cart_ppu_write")
         .withParameter("addr", addr)
         .withParameter("val", val)
         .andReturnValue(ret);
@@ -115,4 +115,12 @@ TEST(NesBusTestGroup, test_ppu_cart_mirroring) {
     mock_nes_cart::expect_nes_cart_ppu_read(0x2C01, 0, false);
     ret = nes_bus_ppu_read(&bus, 0x2C01);
     CHECK_EQUAL(ret, 0xBB);
+
+    mock_nes_cart::expect_nes_cart_ppu_read(0x3C01, 0, false);
+    ret = nes_bus_ppu_read(&bus, 0x3C01);
+    CHECK_EQUAL(ret, 0xBB);
+
+    mock_nes_cart::expect_nes_cart_ppu_write(0x3C01, 0xEE);
+    nes_bus_ppu_write(&bus, 0x3C01, 0xEE);
+    CHECK_EQUAL(0xEE, bus.vram[1][1]);
 }

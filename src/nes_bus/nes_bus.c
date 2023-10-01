@@ -87,7 +87,7 @@ bool nes_bus_ppu_write(NesBus *bus, uint16_t addr, uint8_t val) {
     if (nes_cart_ppu_write(&bus->cart, addr, val)) {
         return true;  // probably CHR-rom or CHR-ram
     }
-    if ((0x2000 <= addr) && (addr < 0x3000)) {
+    if ((0x2000 <= addr) && (addr < 0x3F00)) {
         *vram_mirroring(bus, addr) = val;
         return true;
     }
