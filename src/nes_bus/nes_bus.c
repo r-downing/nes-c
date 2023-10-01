@@ -16,7 +16,7 @@ bool nes_bus_cpu_write(NesBus *bus, uint16_t addr, uint8_t val) {
         return true;
     }
     if (addr < 0x2000) {
-        bus->ram[addr & 0x7FF] = val;
+        bus->ram[addr & (sizeof(bus->ram) - 1)] = val;
         return true;
     }
     if (addr < 0x4000) {
@@ -43,7 +43,7 @@ uint8_t nes_bus_cpu_read(NesBus *bus, uint16_t addr) {
         return val;
     }
     if (addr < 0x2000) {
-        return bus->ram[addr & 0x7FF];
+        return bus->ram[addr & (sizeof(bus->ram) - 1)];
     }
     if (addr < 0x4000) {
         return c2C02_read_reg(&bus->ppu, addr & 0x7);
