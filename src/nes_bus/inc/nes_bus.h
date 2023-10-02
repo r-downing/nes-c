@@ -23,10 +23,10 @@ typedef struct {
 
 bool nes_bus_cpu_write(NesBus *, uint16_t addr, uint8_t val);
 uint8_t nes_bus_cpu_read(NesBus *, uint16_t addr);
-bool nes_bus_ppu_write(NesBus *bus, uint16_t addr, uint8_t val);
-uint8_t nes_bus_ppu_read(NesBus *bus, uint16_t addr);
+bool nes_bus_ppu_write(NesBus *, uint16_t addr, uint8_t val);
+uint8_t nes_bus_ppu_read(NesBus *, uint16_t addr);
 
-void nes_bus_init(NesBus *const bus);
+void nes_bus_init(NesBus *);
 
 void nes_bus_cycle(NesBus *);
 

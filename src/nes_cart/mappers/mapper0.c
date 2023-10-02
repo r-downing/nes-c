@@ -10,7 +10,7 @@ static bool mapper0_cpu_write(NesCart *const cart, uint16_t addr, uint8_t val) {
         }
         cart->prg_ram.buf[addr & (cart->prg_ram.size - 1)] = val;
     }
-    return false;  // ToDo - warn writing prg mem
+    return false;
 }
 
 static bool mapper0_cpu_read(NesCart *const cart, uint16_t addr, uint8_t *const val_out) {

@@ -17,7 +17,7 @@ TEST_GROUP(NesCartTestGroup) {
     }
 };
 
-TEST(NesCartTestGroup, test_gamepad_none_pressed) {
+TEST(NesCartTestGroup, test_init_from_data) {
     uint8_t buf[0x7011] = {0};
 
     buf[0] = 'N';
