@@ -24,7 +24,7 @@ typedef union __attribute__((__packed__)) {
              * Mirroring: 0: horizontal (vertical arrangement) (CIRAM A10 = PPU A11)
              *            1: vertical (horizontal arrangement) (CIRAM A10 = PPU A10)
              */
-            NesCartMirrorType mirroring : 1;
+            uint8_t mirroring : 1;
 
             /** 1: Cartridge contains battery-backed PRG RAM ($6000-7FFF) or other persistent memory */
             uint8_t has_pers_mem : 1;
