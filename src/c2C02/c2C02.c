@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <c2C02.h>
 #include <stddef.h>
 #include <string.h>
@@ -113,6 +114,7 @@ void c2C02_write_reg(C2C02 *const c, const uint8_t addr, const uint8_t val) {
             c->ctrl.u8 = val;
             c->temp_vram_address.nametable_x = c->ctrl.nametable_x;  // Todo - confirm this?
             c->temp_vram_address.nametable_y = c->ctrl.nametable_y;
+            assert(c->ctrl.sprite_size == 0);  // Todo - implement 8x16 sprites
             // Todo - trigger nmi if enabling during vblank. not sure of exact timing
             break;
         }

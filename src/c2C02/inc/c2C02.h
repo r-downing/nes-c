@@ -27,8 +27,8 @@ typedef struct __attribute__((__packed__)) {
         uint8_t tile;  // For 8x8 sprites, this is tile number within pattern table selected in bit 3 of PPUCTRL
         struct __attribute__((__packed__)) {
             uint8_t bank : 1;  // Bank ($0000 or $1000) of
-            uint8_t tile : 7;  // ile number of top of sprite (0 to 254; bottom half gets the next tile)
-        } _8x16;               // Todo - 8x16 sprite support
+            uint8_t tile : 7;  // tile number of top of sprite (0 to 254; bottom half gets the next tile)
+        } _8x16;
     };
 
     _c2C02_sprite_attr attributes;
