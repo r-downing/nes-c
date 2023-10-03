@@ -11,6 +11,11 @@ typedef enum {
 
 typedef struct NesCart {
     struct {
+        void (*callback)(void *arg);
+        void *arg;
+    } irq;
+
+    struct {
         union {
             size_t size;
             struct __attribute__((__packed__)) {

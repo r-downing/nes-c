@@ -60,3 +60,9 @@ typedef union __attribute__((__packed__)) {
 } RawCartridgeHeader;
 
 static_assert(sizeof(((RawCartridgeHeader *)NULL)->buf) == sizeof(RawCartridgeHeader));
+
+static inline void nes_cart_irq(const NesCart *const cart) {
+    if (cart->irq.callback) {
+        cart->irq.callback(cart->irq.arg);
+    }
+}

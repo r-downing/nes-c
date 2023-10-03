@@ -117,6 +117,8 @@ void nes_bus_init(NesBus *const bus) {
     bus->ppu.bus = &ppu_bus_interface;
     bus->ppu.nmi.callback = (void (*)(void *))c6502_nmi;
     bus->ppu.nmi.ctx = &bus->cpu;
+    bus->cart.irq.callback = (void (*)(void *))c6502_irq;
+    bus->cart.irq.arg = &bus->cpu;
     nes_bus_reset(bus);
 }
 
