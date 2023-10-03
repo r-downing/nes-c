@@ -24,6 +24,7 @@ typedef struct NesCart {
 
     // https://www.nesdev.org/wiki/Mapper
     const struct NesCartMapperInterface {
+        const char *name;
         bool (*cpu_write)(struct NesCart *, uint16_t addr, uint8_t val);
         bool (*cpu_read)(struct NesCart *, uint16_t addr, uint8_t *val_out);
         bool (*ppu_write)(struct NesCart *, uint16_t addr, uint8_t val);

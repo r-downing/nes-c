@@ -28,6 +28,7 @@ static bool ppu_read(NesCart *, uint16_t addr, uint8_t *val_out) {
 }
 
 static const NesCart::NesCartMapperInterface mapper = {
+    .name = "MOCK",
     .cpu_write = cpu_write,
     .cpu_read = cpu_read,
     .ppu_write = ppu_write,

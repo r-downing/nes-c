@@ -7,9 +7,13 @@
 #include "nes_cart_impl.h"
 
 extern const struct NesCartMapperInterface mapper0;
+extern const struct NesCartMapperInterface mapper2;
 
 static const struct NesCartMapperInterface *const mapper_table[] = {
-    &mapper0,
+    [0] = &mapper0,
+    // Todo - mapper1 https://www.nesdev.org/wiki/MMC1
+    [2] = &mapper2,
+    // Todo - mapper3+ https://www.nesdev.org/wiki/Mapper
 };
 
 void nes_cart_deinit(NesCart *cart) {
@@ -86,6 +90,12 @@ static void _nes_cart_init_from_src(NesCart *const cart, size_t (*read_func)(voi
     const size_t mapper_num = (header.flags7.mapper_high << 4) | header.flags6.mapper_low;
     assert(mapper_num < (sizeof(mapper_table) / sizeof(mapper_table[0])));
     cart->mapper = mapper_table[mapper_num];
+    assert(cart->mapper);
+    assert(cart->mapper->cpu_read);
+    assert(cart->mapper->cpu_write);
+    assert(cart->mapper->ppu_read);
+    assert(cart->mapper->ppu_write);
+
     if (NULL != mapper_table[mapper_num]->init) {
         mapper_table[mapper_num]->init(cart);
     }

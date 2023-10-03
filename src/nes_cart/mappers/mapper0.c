@@ -1,6 +1,8 @@
+// https://www.nesdev.org/wiki/NROM
+
 #include "../nes_cart_impl.h"
 
-static bool mapper0_cpu_write(NesCart *const cart, uint16_t addr, uint8_t val) {
+bool mapper0_cpu_write(NesCart *const cart, uint16_t addr, uint8_t val) {
     if (addr < 0x6000) {
         return false;
     }
@@ -13,7 +15,7 @@ static bool mapper0_cpu_write(NesCart *const cart, uint16_t addr, uint8_t val) {
     return false;
 }
 
-static bool mapper0_cpu_read(NesCart *const cart, uint16_t addr, uint8_t *const val_out) {
+bool mapper0_cpu_read(NesCart *const cart, uint16_t addr, uint8_t *const val_out) {
     if (addr < 0x6000) {
         return false;
     }
@@ -29,7 +31,7 @@ static bool mapper0_cpu_read(NesCart *const cart, uint16_t addr, uint8_t *const 
     return true;
 }
 
-static bool mapper0_ppu_write(NesCart *const cart, uint16_t addr, uint8_t val) {
+bool mapper0_ppu_write(NesCart *const cart, uint16_t addr, uint8_t val) {
     if (addr >= 0x2000) {
         return false;
     }
@@ -40,7 +42,7 @@ static bool mapper0_ppu_write(NesCart *const cart, uint16_t addr, uint8_t val) {
     return false;
 }
 
-static bool mapper0_ppu_read(NesCart *const cart, uint16_t addr, uint8_t *const val_out) {
+bool mapper0_ppu_read(NesCart *const cart, uint16_t addr, uint8_t *const val_out) {
     if (addr >= 0x2000) {
         return false;
     }
@@ -54,6 +56,7 @@ static bool mapper0_ppu_read(NesCart *const cart, uint16_t addr, uint8_t *const 
 }
 
 const struct NesCartMapperInterface mapper0 = {
+    .name = "NROM",
     .cpu_write = mapper0_cpu_write,
     .cpu_read = mapper0_cpu_read,
     .ppu_write = mapper0_ppu_write,
