@@ -11,14 +11,28 @@ typedef enum {
 
 typedef struct NesCart {
     struct {
-        size_t size;
+        union {
+            size_t size;
+            struct __attribute__((__packed__)) {
+                size_t : 14;
+                size_t banks : 8;  // 16K
+                // ...
+            };
+        };
         const uint8_t *buf;
-    } prg_rom, chr_rom;
+    } prg_rom;
 
     struct {
-        size_t size;
+        union {
+            size_t size;
+            struct __attribute__((__packed__)) {
+                size_t : 13;
+                size_t banks : 8;  // 8K
+                // ...
+            };
+        };
         uint8_t *buf;
-    } prg_ram, chr_ram;
+    } chr_rom, prg_ram, chr_ram;
 
     NesCartMirrorType mirror_type;
 

@@ -70,12 +70,12 @@ static void _nes_cart_init_from_src(NesCart *const cart, size_t (*read_func)(voi
         read_func(arg, trainer, sizeof(trainer));
     }
 
-    cart->prg_rom.size = header.prg_rom_size_16KB * 0x4000;
+    cart->prg_rom.banks = header.prg_rom_size_16KB;
     cart->prg_rom.buf = malloc(cart->prg_rom.size);
     read_func(arg, (void *)cart->prg_rom.buf, cart->prg_rom.size);
 
     if (0 != header.chr_rom_size_8KB) {
-        cart->chr_rom.size = header.chr_rom_size_8KB * 0x2000;
+        cart->chr_rom.banks = header.chr_rom_size_8KB;
         cart->chr_rom.buf = malloc(cart->chr_rom.size);
         read_func(arg, (void *)cart->chr_rom.buf, cart->chr_rom.size);
     } else {
@@ -83,7 +83,7 @@ static void _nes_cart_init_from_src(NesCart *const cart, size_t (*read_func)(voi
     }
 
     if (header.flags6.has_pers_mem) {
-        cart->prg_ram.size = (header.prg_ram_size_8KB ? header.prg_ram_size_8KB : 1) * 0x2000;
+        cart->prg_ram.banks = (header.prg_ram_size_8KB ? header.prg_ram_size_8KB : 1);
         cart->prg_ram.buf = malloc(cart->prg_ram.size);
     }
 
