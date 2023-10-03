@@ -4,16 +4,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "mappers/impl.h"
 #include "nes_cart_impl.h"
-
-extern const struct NesCartMapperInterface mapper_000;
-extern const struct NesCartMapperInterface mapper_002;
 
 static const struct NesCartMapperInterface *const mapper_table[] = {
     [0] = &mapper_000,
     // Todo - mapper1 https://www.nesdev.org/wiki/MMC1
     [2] = &mapper_002,
-    // Todo - mapper3+ https://www.nesdev.org/wiki/Mapper
+    [3] = &mapper_003,
+    // Todo - mapper4+ https://www.nesdev.org/wiki/Mapper
 };
 
 void nes_cart_deinit(NesCart *cart) {
