@@ -6,13 +6,13 @@
 
 #include "nes_cart_impl.h"
 
-extern const struct NesCartMapperInterface mapper0;
-extern const struct NesCartMapperInterface mapper2;
+extern const struct NesCartMapperInterface mapper_000;
+extern const struct NesCartMapperInterface mapper_002;
 
 static const struct NesCartMapperInterface *const mapper_table[] = {
-    [0] = &mapper0,
+    [0] = &mapper_000,
     // Todo - mapper1 https://www.nesdev.org/wiki/MMC1
-    [2] = &mapper2,
+    [2] = &mapper_002,
     // Todo - mapper3+ https://www.nesdev.org/wiki/Mapper
 };
 

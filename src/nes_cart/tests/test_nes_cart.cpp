@@ -44,9 +44,9 @@ TEST(NesCartTestGroup, test_init_from_data) {
     CHECK_EQUAL(cart.chr_rom.buf[0x3000], 45);
 }
 
-extern const struct NesCart::NesCartMapperInterface mapper2;
+extern const struct NesCart::NesCartMapperInterface mapper_002;
 
-TEST(NesCartTestGroup, test_init_from_data_mapper2) {
+TEST(NesCartTestGroup, test_init_from_data_mapper_002) {
     uint8_t buf[0x7011] = {0};
 
     buf[0] = 'N';
@@ -72,5 +72,5 @@ TEST(NesCartTestGroup, test_init_from_data_mapper2) {
     CHECK_EQUAL(cart.chr_rom.buf[0], 123);
     CHECK_EQUAL(cart.chr_rom.buf[0x3000], 45);
 
-    CHECK_EQUAL(cart.mapper, &mapper2);
+    CHECK_EQUAL(cart.mapper, &mapper_002);
 }
