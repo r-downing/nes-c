@@ -47,7 +47,7 @@ typedef struct NesCart {
         void (*deinit)(struct NesCart *);
         void (*reset)(struct NesCart *);
     } *mapper;
-    void *mapper_data;
+    uintptr_t mapper_data;
 
 } NesCart;
 

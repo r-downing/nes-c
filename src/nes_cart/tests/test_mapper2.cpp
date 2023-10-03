@@ -14,7 +14,7 @@ TEST_GROUP(Mapper2TestGroup) {
     NesCart cart;
     TEST_SETUP() {
         cart.mapper = &mapper2;
-        cart.prg_rom.size = 0x10000;
+        cart.prg_rom.banks = 4;
         cart.prg_rom.buf = (uint8_t *)malloc(cart.prg_rom.size);
     }
 

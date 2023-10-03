@@ -6,7 +6,7 @@ bool mapper2_cpu_write(NesCart *const cart, uint16_t addr, uint8_t val) {
     if (addr < 0x8000) {
         return false;
     }
-    cart->mapper_data = (void *)(uintptr_t)val;
+    cart->mapper_data = val;
     return true;
 }
 
@@ -14,8 +14,7 @@ static bool mapper2_cpu_read(NesCart *const cart, uint16_t addr, uint8_t *const 
     if (addr < 0x8000) {
         return false;
     }
-    const size_t num_banks = cart->prg_rom.size >> 14;
-    const uint8_t bank = (addr >= 0xC000) ? (num_banks - 1) : ((uint8_t)(uintptr_t)cart->mapper_data);
+    const uint8_t bank = (addr >= 0xC000) ? (cart->prg_rom.banks - 1) : ((uint8_t)cart->mapper_data);
     *val_out = cart->prg_rom.buf[(bank << 14) | (addr & ((1 << 14) - 1))];
     return true;
 }
