@@ -4,11 +4,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef enum {
-    NES_CART_MIRROR_HORIZONTAL = 0,
-    NES_CART_MIRROR_VERTICAL = 1,
-} NesCartMirrorType;
-
 typedef struct NesCart {
     struct {
         void (*callback)(void *arg);
@@ -57,7 +52,10 @@ typedef struct NesCart {
         uint8_t VRAM_A10 : 1;
     };
 
-    NesCartMirrorType mirror_type;
+    enum {
+        NES_CART_MIRROR_HORIZONTAL = 0,
+        NES_CART_MIRROR_VERTICAL = 1,
+    } mirror_type;
 
     // https://www.nesdev.org/wiki/Mapper
     const struct NesCartMapperInterface {

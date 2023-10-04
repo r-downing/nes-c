@@ -27,7 +27,7 @@ TEST(NesBusTestGroup, test_ppu_cart_mirroring) {
     bus.vram[0][1] = 0xAA;
     bus.vram[1][1] = 0xBB;
 
-    bus.cart.mirror_type = NES_CART_MIRROR_HORIZONTAL;
+    bus.cart.mirror_type = NesCart::NES_CART_MIRROR_HORIZONTAL;
 
     uint8_t ret;
 
@@ -43,7 +43,7 @@ TEST(NesBusTestGroup, test_ppu_cart_mirroring) {
     ret = nes_bus_ppu_read(&bus, 0x2C01);
     CHECK_EQUAL(ret, 0xBB);
 
-    bus.cart.mirror_type = NES_CART_MIRROR_VERTICAL;
+    bus.cart.mirror_type = NesCart::NES_CART_MIRROR_VERTICAL;
 
     ret = nes_bus_ppu_read(&bus, 0x2001);
     CHECK_EQUAL(ret, 0xAA);
