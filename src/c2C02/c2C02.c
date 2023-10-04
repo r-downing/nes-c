@@ -114,7 +114,6 @@ void c2C02_write_reg(C2C02 *const c, const uint8_t addr, const uint8_t val) {
             c->ctrl.u8 = val;
             c->temp_vram_address.nametable_x = c->ctrl.nametable_x;  // Todo - confirm this?
             c->temp_vram_address.nametable_y = c->ctrl.nametable_y;
-            assert(c->ctrl.sprite_size == 0);  // Todo - implement 8x16 sprites
             // Todo - trigger nmi if enabling during vblank. not sure of exact timing
             break;
         }
@@ -425,7 +424,8 @@ static void _render_scanlines(C2C02 *const c) {
         c->sprite_reg.sprite0_present = false;
         for (size_t i = 0; i < ARRAY_LEN(c->oam.sprites); i++) {
             const _c2C02_sprite *const sprite = &c->oam.sprites[i];
-            if ((c->scanline >= sprite->y) && (c->scanline < (sprite->y + 8))) {
+            const int height = c->ctrl.sprite_size ? 16 : 8;
+            if ((c->scanline >= sprite->y) && (c->scanline < (sprite->y + height))) {
                 if (i == 0) {
                     c->sprite_reg.sprite0_present = true;
                 }
@@ -443,14 +443,30 @@ static void _render_scanlines(C2C02 *const c) {
 
             shifter->attr = sprite->attributes.u8;
             shifter->x = sprite->x;
-            uint8_t fine_y = c->scanline - sprite->y;
-            if (sprite->attributes.flip_vertical) {
-                fine_y = 7 - fine_y;
+
+            if (c->ctrl.sprite_size == 0) {
+                uint8_t fine_y = c->scanline - sprite->y;
+                if (sprite->attributes.flip_vertical) {
+                    fine_y = 7 - fine_y;
+                }
+                shifter->pattern_lo =
+                    bus_read(c, get_pattern_table_address(fine_y, 0, sprite->tile, c->ctrl.sprite_pattern_table));
+                shifter->pattern_hi =
+                    bus_read(c, get_pattern_table_address(fine_y, 1, sprite->tile, c->ctrl.sprite_pattern_table));
+            } else {  // 8x16 sprites
+                uint8_t y = c->scanline - sprite->y;
+                if (sprite->attributes.flip_vertical) {
+                    y = 15 - y;
+                }
+                const uint8_t coarse_y = y >> 3;
+                const uint8_t fine_y = y & 7;
+
+                shifter->pattern_lo = bus_read(
+                    c, get_pattern_table_address(fine_y, 0, (sprite->_8x16.tile << 1) | coarse_y, sprite->_8x16.bank));
+                shifter->pattern_hi = bus_read(
+                    c, get_pattern_table_address(fine_y, 1, (sprite->_8x16.tile << 1) | coarse_y, sprite->_8x16.bank));
             }
-            shifter->pattern_lo =
-                bus_read(c, get_pattern_table_address(fine_y, 0, sprite->tile, c->ctrl.sprite_pattern_table));
-            shifter->pattern_hi =
-                bus_read(c, get_pattern_table_address(fine_y, 1, sprite->tile, c->ctrl.sprite_pattern_table));
+
             if (!sprite->attributes.flip_horizontal) {
                 shifter->pattern_lo = bit_reverse(shifter->pattern_lo);
                 shifter->pattern_hi = bit_reverse(shifter->pattern_hi);
