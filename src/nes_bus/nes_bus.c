@@ -87,8 +87,8 @@ bool nes_bus_ppu_write(NesBus *bus, uint16_t addr, uint8_t val) {
     if (nes_cart_ppu_write(&bus->cart, addr, val)) {
         return true;  // probably CHR-rom or CHR-ram
     }
-    if ((0x2000 <= addr) && (addr < 0x3F00)) {
-        *vram_mirroring(bus, addr) = val;
+    if (bus->cart.VRAM_CE) {
+        bus->vram[bus->cart.VRAM_A10][addr & 0x3FF] = val;
         return true;
     }
     return false;  // Todo
@@ -99,8 +99,8 @@ uint8_t nes_bus_ppu_read(NesBus *bus, uint16_t addr) {
     if (nes_cart_ppu_read(&bus->cart, addr, &val)) {
         return val;  // probably CHR-rom or CHR-ram
     }
-    if ((0x2000 <= addr) && (addr < 0x3F00)) {
-        return *vram_mirroring(bus, addr);
+    if (bus->cart.VRAM_CE) {
+        return bus->vram[bus->cart.VRAM_A10][addr & 0x3FF];
     }
     return 0;  // should never get something < 0x3F00
 }

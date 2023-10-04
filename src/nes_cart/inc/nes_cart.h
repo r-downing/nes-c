@@ -39,6 +39,24 @@ typedef struct NesCart {
         uint8_t *buf;
     } chr_rom, prg_ram, chr_ram;
 
+    // cart output signals for routing to console internal vram. will be updated after an attempted
+    // nes_cart_ppu_read() or nes_cart_ppu_write()
+    struct {
+        // https://www.nesdev.org/wiki/Cartridge_connector#Signal_descriptions
+
+        // This signal is used as an input to enable the internal 2k of VRAM (used for name table and attribute tables
+        // typically, but could be made for another use). This signal is usually directly connected with PPU /A13, but
+        // carts using their own RAM for name table and attribute tables will have their own logic implemented.
+        uint8_t VRAM_CE : 1;
+
+        // This is the 1k bank selection input for internal VRAM. This is used to control how the name tables are
+        // banked; in other words, this selects nametable mirroring. Connect to PPU A10 for vertical mirroring or PPU
+        // A11 for horizontal mirroring. Connect it to a software operated latch to allow bank switching of two
+        // separate name tables in single-screen mirroring (as in AxROM). Many mappers have software operated mirroring
+        // selection: they multiplex PPU A10 and PPU A11 into this pin, selected by a latch.
+        uint8_t VRAM_A10 : 1;
+    };
+
     NesCartMirrorType mirror_type;
 
     // https://www.nesdev.org/wiki/Mapper
