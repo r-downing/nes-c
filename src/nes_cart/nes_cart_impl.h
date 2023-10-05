@@ -66,3 +66,12 @@ static inline void nes_cart_irq(const NesCart *const cart) {
         cart->irq.callback(cart->irq.arg);
     }
 }
+
+typedef struct __attribute__((__packed__)) {
+    uint16_t : 10;  // 0-9
+    uint16_t A10 : 1;
+    uint16_t A11 : 1;
+    uint16_t A12 : 1;
+    uint16_t A13 : 1;
+    uint16_t : 2;  // 14-15
+} mapper_ppu_addr;

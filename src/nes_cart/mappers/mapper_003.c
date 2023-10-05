@@ -19,13 +19,20 @@ bool mapper_003_cpu_read(NesCart *const cart, uint16_t addr, uint8_t *const val_
     return true;
 }
 
-bool mapper_003_ppu_write(NesCart *const /*cart*/, uint16_t /*addr*/, uint8_t /*val*/) {
-    // Todo - confirm no CHR RAM for this mapper
+bool mapper_003_ppu_write(NesCart *const cart, uint16_t addr, uint8_t /*val*/) {
+    if (addr >= 0x2000) {
+        const mapper_ppu_addr *const ppu_addr = (mapper_ppu_addr *)&addr;
+        cart->VRAM_CE = 1;  // ~ppu_addr->A13
+        cart->VRAM_A10 = (cart->mirror_type == NES_CART_MIRROR_VERTICAL) ? ppu_addr->A10 : ppu_addr->A11;
+    }
     return false;
 }
 
 bool mapper_003_ppu_read(NesCart *const cart, uint16_t addr, uint8_t *const val_out) {
     if (addr >= 0x2000) {
+        const mapper_ppu_addr *const ppu_addr = (mapper_ppu_addr *)&addr;
+        cart->VRAM_CE = 1;  // ~ppu_addr->A13
+        cart->VRAM_A10 = (cart->mirror_type == NES_CART_MIRROR_VERTICAL) ? ppu_addr->A10 : ppu_addr->A11;
         return false;
     }
     *val_out = cart->chr_rom.buf[((cart->mapper_data & 3) << 13) | addr];
