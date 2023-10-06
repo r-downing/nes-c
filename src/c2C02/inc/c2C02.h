@@ -54,6 +54,16 @@ typedef struct C2C02 {
     int dot;
     int scanline;
 
+    // https://www.nesdev.org/wiki/Open_bus_behavior
+    struct {
+        union {
+            uint8_t fresh[4];    // tracks when bits were refreshed.
+            uint32_t shift_out;  // use to shift fresh array right by 8b
+            // shift every 8 frames. whole array cleared after 32 frames (e.g. 533ms avg decay)
+        };
+        uint8_t val;  // current open-bus value
+    } open_bus;
+
     int clocks;
     int last_status_read_clocks;
 

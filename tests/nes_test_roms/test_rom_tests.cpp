@@ -58,3 +58,13 @@ TEST(TestRomTests, test_vbl_nmi_timing_6_nmi_disable) {
 // TEST(TestRomTests, test_vbl_nmi_timing_7_nmi_timing) { // Todo
 //     test_vbl_nmi_timing(ROMS_FOLDER "/nes-test-roms/vbl_nmi_timing/7.nmi_timing.nes", 3);
 // }
+
+TEST(TestRomTests, test_vbl_nmi_timing_ppu_open_bus) {
+    nes_cart_init(&bus.cart, ROMS_FOLDER "/nes-test-roms/ppu_open_bus/ppu_open_bus.nes");
+    nes_bus_init(&bus);
+    for (int i = 0; i < ppu_cycles_per_sec * 5; i++) {
+        nes_bus_cycle(&bus);
+    }
+
+    CHECK_EQUAL(bus.cart.prg_ram.buf[0], 0);
+}

@@ -50,17 +50,22 @@ uint8_t c2C02_read_reg(C2C02 *const c, const uint8_t addr) {
         // case 0x1: mask not readable
         case 0x2: {  // status
             c->last_status_read_clocks = c->clocks;
-            const uint8_t ret = (c->status.u8 & 0xE0) | (0 /* Todo - ppu stale data */);
+            c->open_bus.val = (c->open_bus.val & (~0xE0)) | (c->status.u8 & 0xE0);
+            c->open_bus.fresh[0] |= 0xE0;
             c->status.vblank = 0;
             c->pending_nmi = false;
             c->address_latch = false;
-            return ret;
+            return c->open_bus.val;
         }
         // case 0x3: OAM addr not readable
         case 0x4:
             // Todo -Reading OAMDATA while the PPU is rendering will expose internal OAM accesses during sprite
             // evaluation and loading; https://www.nesdev.org/wiki/PPU_registers#OAMDATA
-            return c->oam.u8_arr[c->oam.addr];
+
+            // nes ppu-open-bus test says these bits should always be cleared when reading oam
+            c->open_bus.val = c->oam.u8_arr[c->oam.addr] & 0b11100011;
+            c->open_bus.fresh[0] = 0xFF;
+            return c->open_bus.val;
         // case 0x5: // scroll not readable
         // case 0x6: // addr not readable
         case 0x7: {
@@ -68,14 +73,18 @@ uint8_t c2C02_read_reg(C2C02 *const c, const uint8_t addr) {
             c->data_read_buffer = bus_read(c, c->vram_address.addr);
             if (c->vram_address.addr >= 0x3F00) {
                 ret = c->data_read_buffer;  // reading from palette, no delay
+                c->open_bus.fresh[0] |= 0x3F;
+                c->open_bus.val = (c->open_bus.val & (~0x3F)) | (ret & 0x3F);
+                ret = c->open_bus.val;
+            } else {
+                c->open_bus.val = ret;
+                c->open_bus.fresh[0] = 0xFF;
             }
             c->vram_address.addr += (c->ctrl.vram_inc ? 32 : 1);
             return ret;
         }
-        default:
-            return 0;
     }
-    return 0;  // Todo
+    return c->open_bus.val;
 }
 
 static void write_scroll_reg(C2C02 *const c, const uint8_t val) {
@@ -106,6 +115,8 @@ static void write_ppu_addr_reg(C2C02 *const c, const uint8_t val) {
 }
 
 void c2C02_write_reg(C2C02 *const c, const uint8_t addr, const uint8_t val) {
+    c->open_bus.val = val;  // https://www.nesdev.org/wiki/Open_bus_behavior#PPU_open_bus
+    c->open_bus.fresh[0] = 0xFF;
     switch (addr & 0x7) {
         case 0x0: {  // control
             c->ctrl.u8 = val;
@@ -546,6 +557,13 @@ void c2C02_cycle(C2C02 *const c) {
         if (c->scanline > 260) {
             c->scanline = -1;
             c->frames++;
+            if ((c->frames & 7) == 0) {
+                // bits that were refreshed in oldest cycle and not any more recent ones decay to 0
+                const uint8_t decayed =
+                    c->open_bus.fresh[4] & (~(c->open_bus.fresh[2] | c->open_bus.fresh[1] | c->open_bus.fresh[0]));
+                c->open_bus.val &= ~decayed;
+                c->open_bus.shift_out <<= 8;
+            }
         }
     }
 }
