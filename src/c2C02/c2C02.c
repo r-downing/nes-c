@@ -79,20 +79,17 @@ uint8_t c2C02_read_reg(C2C02 *const c, const uint8_t addr) {
 }
 
 static void write_scroll_reg(C2C02 *const c, const uint8_t val) {
-    const union __attribute__((__packed__)) {
-        uint8_t u8;
-        struct __attribute__((__packed__)) {
-            uint8_t fine : 3;
-            uint8_t coarse : 5;
-        };
-    } reg = {.u8 = val};
+    const struct __attribute__((__packed__)) {
+        uint8_t fine : 3;
+        uint8_t coarse : 5;
+    } *const reg = (void *)&val;
 
     if (!c->address_latch) {
-        c->fine_x = reg.fine;
-        c->temp_vram_address.coarse_x = reg.coarse;
+        c->fine_x = reg->fine;
+        c->temp_vram_address.coarse_x = reg->coarse;
     } else {
-        c->temp_vram_address.fine_y = reg.fine;
-        c->temp_vram_address.coarse_y = reg.coarse;
+        c->temp_vram_address.fine_y = reg->fine;
+        c->temp_vram_address.coarse_y = reg->coarse;
     }
     c->address_latch = !c->address_latch;
 }
