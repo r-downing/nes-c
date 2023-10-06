@@ -12,6 +12,8 @@ static const struct NesCartMapperInterface *const mapper_table[] = {
     // Todo - mapper1 https://www.nesdev.org/wiki/MMC1
     [2] = &mapper_002,
     [3] = &mapper_003,
+    // ...
+    [66] = &mapper_066,
     // Todo - mapper4+ https://www.nesdev.org/wiki/Mapper
 };
 

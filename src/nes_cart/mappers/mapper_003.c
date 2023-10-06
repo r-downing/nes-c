@@ -35,7 +35,7 @@ bool mapper_003_ppu_read(NesCart *const cart, uint16_t addr, uint8_t *const val_
         cart->VRAM_A10 = (cart->mirror_type == NES_CART_MIRROR_VERTICAL) ? ppu_addr->A10 : ppu_addr->A11;
         return false;
     }
-    *val_out = cart->chr_rom.buf[((cart->mapper_data & 3) << 13) | addr];
+    *val_out = cart->chr_rom.buf[((cart->mapper_data & 3) << 13) | (addr & 0x1FFF)];
     return true;
 }
 

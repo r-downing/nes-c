@@ -1,5 +1,5 @@
 
-add_library(nes_cart STATIC nes_cart.c mappers/mapper_000.c mappers/mapper_002.c mappers/mapper_003.c)
+add_library(nes_cart STATIC nes_cart.c mappers/mapper_000.c mappers/mapper_002.c mappers/mapper_003.c mappers/mapper_066.c)
 target_include_directories(nes_cart PUBLIC inc)
 
 add_executable(test_nes_cart tests/test_nes_cart.cpp)
