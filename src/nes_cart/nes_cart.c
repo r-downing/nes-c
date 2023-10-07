@@ -70,6 +70,9 @@ static void _nes_cart_init_from_src(NesCart *const cart, size_t (*read_func)(voi
         uint8_t trainer[512];
         read_func(arg, trainer, sizeof(trainer));
     }
+    if (header.flags6.four_screen_vram) {
+        assert(0);  // Todo - support 4-scr vram
+    }
 
     cart->prg_rom.banks = header.prg_rom_size_16KB;
     cart->prg_rom.buf = malloc(cart->prg_rom.size);
@@ -83,12 +86,16 @@ static void _nes_cart_init_from_src(NesCart *const cart, size_t (*read_func)(voi
         cart->chr_ram.buf = malloc(0x2000);  // Todo - nes2.0 supports chr-ram size
     }
 
+    const size_t mapper_num = (header.flags7.mapper_high << 4) | header.flags6.mapper_low;
+
     if (header.flags6.has_pers_mem) {
         cart->prg_ram.banks = (header.prg_ram_size_8KB ? header.prg_ram_size_8KB : 1);
         cart->prg_ram.buf = malloc(cart->prg_ram.size);
+    } else if (0 == mapper_num) {
+        cart->prg_ram.banks = 1;
+        cart->prg_ram.buf = malloc(cart->prg_ram.size);
     }
 
-    const size_t mapper_num = (header.flags7.mapper_high << 4) | header.flags6.mapper_low;
     assert(mapper_num < (sizeof(mapper_table) / sizeof(mapper_table[0])));
     cart->mapper = mapper_table[mapper_num];
     assert(cart->mapper);
