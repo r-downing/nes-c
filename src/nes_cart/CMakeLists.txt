@@ -9,7 +9,7 @@ set(MAPPER_SOURCE_FILES
 find_package(Python COMPONENTS Interpreter REQUIRED)
 add_custom_command(
     OUTPUT mapper_table.c
-    COMMAND ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/mappers/make_mapper_table.py mapper_table.c "${MAPPER_SOURCE_FILES}"
+    COMMAND ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/mappers/make_mapper_table.py mapper_table.c ${MAPPER_SOURCE_FILES}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/mappers/make_mapper_table.py
 )
 

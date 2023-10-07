@@ -1,7 +1,7 @@
 import re
 import sys
 
-output, mapper_files = sys.argv[1], sys.argv[2]
+output, mapper_files = sys.argv[1], ",".join(sys.argv[2:])
 mapper_nums = re.findall(r"mapper_(\d+)", mapper_files)
 
 externs = "\n".join(f"extern const struct NesCartMapperInterface mapper_{n};" for n in mapper_nums)
