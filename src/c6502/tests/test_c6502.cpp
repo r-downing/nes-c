@@ -65,6 +65,7 @@ TEST(C6502TestGroup, test_0x06) {
     mock_bus::expect_read(123, 0x06);
     mock_bus::expect_read(124, 51);
     mock_bus::expect_read(51, 0b01001111);
+    mock_bus::expect_write(51, 0b01001111, true);
     mock_bus::expect_write(51, 0b10011110, true);
     CHECK_EQUAL(5, c6502_run_next_instruction(&c));
     CHECK_EQUAL(c.SR.C, 0);
@@ -76,6 +77,7 @@ TEST(C6502TestGroup, test_0x06) {
     mock_bus::expect_read(123, 0x06);
     mock_bus::expect_read(124, 51);
     mock_bus::expect_read(51, 0b10000000);
+    mock_bus::expect_write(51, 0b10000000, true);
     mock_bus::expect_write(51, 0, true);
     CHECK_EQUAL(5, c6502_run_next_instruction(&c));
     CHECK_EQUAL(c.SR.C, 1);
@@ -104,6 +106,7 @@ TEST(C6502TestGroup, test_0x0E) {
     mock_bus::expect_read(2001, 0x34);
     mock_bus::expect_read(2002, 0x12);
     mock_bus::expect_read(0x1234, 0b01010101);
+    mock_bus::expect_write(0x1234, 0b01010101, true);  // double-write for read-modify-write
     mock_bus::expect_write(0x1234, 0b10101010, true);
     CHECK_EQUAL(6, c6502_run_next_instruction(&c));
     CHECK_EQUAL(c.PC, 2003);
@@ -182,6 +185,7 @@ TEST(C6502TestGroup, test_0x16) {
     mock_bus::expect_read(1001, 0x85);
     c.X = 0x82;
     mock_bus::expect_read(7, 0b00001111);
+    mock_bus::expect_write(7, 0b00001111, true);
     mock_bus::expect_write(7, 0b00011110, true);
     CHECK_EQUAL(6, c6502_run_next_instruction(&c));
     CHECK_EQUAL(c.PC, 1002);

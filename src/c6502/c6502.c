@@ -17,6 +17,15 @@ inline static bool write(const C6502 *const c, const uint16_t addr, const uint8_
     return c->bus_interface->write(c->bus_ctx, addr, val);
 }
 
+/** read a byte from the bus at the specified address and write it back.
+ * some instructions just do this before a read-modify-write
+ * https://www.nesdev.org/6502_cpu.txt */
+inline static uint8_t read_write(const C6502 *const c, const uint16_t addr) {
+    const uint8_t ret = c->bus_interface->read(c->bus_ctx, addr);
+    write(c, addr, ret);
+    return ret;
+}
+
 /** return true if there's a page-break between the given addresses */
 inline static bool page_break(const uint16_t a, const uint16_t b) {
     return (0xFF00 & a) != (0xFF00 & b);
@@ -190,7 +199,7 @@ static void OP_ASL(C6502 *const c, const Op *const op) {
     if (AM_ACC == op->address_mode_handler) {
         c->AC = shift_left(c, c->AC);
     } else {
-        write(c, c->addr, shift_left(c, read(c, c->addr)));
+        write(c, c->addr, shift_left(c, read_write(c, c->addr)));
     }
 }
 
@@ -308,7 +317,7 @@ static void OP_CPY(C6502 *const c, const Op *) {
 
 /** decrement mem, flags ZN */
 static void OP_DEC(C6502 *const c, const Op *) {
-    const uint8_t val = read(c, c->addr) - 1;
+    const uint8_t val = read_write(c, c->addr) - 1;
     write(c, c->addr, val);
     update_ZN(c, val);
 }
@@ -329,7 +338,7 @@ static void OP_EOR(C6502 *const c, const Op *) {
 }
 
 static void OP_INC(C6502 *const c, const Op *) {
-    const uint8_t val = read(c, c->addr) + 1;
+    const uint8_t val = read_write(c, c->addr) + 1;
     write(c, c->addr, val);
     update_ZN(c, val);
 }
@@ -378,7 +387,7 @@ static void OP_LSR(C6502 *const c, const Op *const op) {
     if (AM_ACC == op->address_mode_handler) {
         c->AC = shift_right(c, c->AC);
     } else {
-        write(c, c->addr, shift_right(c, read(c, c->addr)));
+        write(c, c->addr, shift_right(c, read_write(c, c->addr)));
     }
 }
 
@@ -426,7 +435,7 @@ static void OP_ROL(C6502 *const c, const Op *const op) {
     if (AM_ACC == op->address_mode_handler) {
         c->AC = rotate_left(c, c->AC);
     } else {
-        write(c, c->addr, rotate_left(c, read(c, c->addr)));
+        write(c, c->addr, rotate_left(c, read_write(c, c->addr)));
     }
 }
 
@@ -441,7 +450,7 @@ static void OP_ROR(C6502 *const c, const Op *const op) {
     if (AM_ACC == op->address_mode_handler) {
         c->AC = rotate_right(c, c->AC);
     } else {
-        write(c, c->addr, rotate_right(c, read(c, c->addr)));
+        write(c, c->addr, rotate_right(c, read_write(c, c->addr)));
     }
 }
 
@@ -538,40 +547,40 @@ static void OP_SAX(C6502 *const c, const Op *) {
 }
 
 static void OP_DCP(C6502 *const c, const Op *) {
-    const uint8_t m = read(c, c->addr) - 1;
+    const uint8_t m = read_write(c, c->addr) - 1;
     write(c, c->addr, m);
     update_ZN(c, c->AC - m);
 }
 
 static void OP_ISC(C6502 *const c, const Op *) {
-    const uint8_t val = read(c, c->addr) + 1;
+    const uint8_t val = read_write(c, c->addr) + 1;
     write(c, c->addr, val);
     sub(c, val);
 }
 
 static void OP_SLO(C6502 *const c, const Op *) {
-    const uint8_t val = shift_left(c, read(c, c->addr));
+    const uint8_t val = shift_left(c, read_write(c, c->addr));
     write(c, c->addr, val);
     c->AC |= val;
     update_ZN(c, c->AC);
 }
 
 static void OP_RLA(C6502 *const c, const Op *) {
-    const uint8_t val = rotate_left(c, read(c, c->addr));
+    const uint8_t val = rotate_left(c, read_write(c, c->addr));
     write(c, c->addr, val);
     c->AC &= val;
     update_ZN(c, c->AC);
 }
 
 static void OP_SRE(C6502 *const c, const Op *) {
-    const uint8_t val = shift_right(c, read(c, c->addr));
+    const uint8_t val = shift_right(c, read_write(c, c->addr));
     write(c, c->addr, val);
     c->AC ^= val;
     update_ZN(c, c->AC);
 }
 
 static void OP_RRA(C6502 *const c, const Op *) {
-    const uint8_t val = rotate_right(c, read(c, c->addr));
+    const uint8_t val = rotate_right(c, read_write(c, c->addr));
     write(c, c->addr, val);
     add(c, val);
 }
