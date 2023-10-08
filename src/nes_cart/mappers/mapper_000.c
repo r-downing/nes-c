@@ -32,9 +32,9 @@ bool mapper_000_cpu_read(NesCart *const cart, uint16_t addr, uint8_t *const val_
 }
 
 bool mapper_000_ppu_write(NesCart *const cart, uint16_t addr, uint8_t val) {
+    const mapper_ppu_addr *const ppu_addr = (mapper_ppu_addr *)&addr;
+    cart->VRAM_CE = ppu_addr->A13;
     if (addr >= 0x2000) {
-        const mapper_ppu_addr *const ppu_addr = (mapper_ppu_addr *)&addr;
-        cart->VRAM_CE = 1;  // ~ppu_addr->A13
         cart->VRAM_A10 = (cart->mirror_type == NES_CART_MIRROR_VERTICAL) ? ppu_addr->A10 : ppu_addr->A11;
         return false;
     }
@@ -46,9 +46,9 @@ bool mapper_000_ppu_write(NesCart *const cart, uint16_t addr, uint8_t val) {
 }
 
 bool mapper_000_ppu_read(NesCart *const cart, uint16_t addr, uint8_t *const val_out) {
+    const mapper_ppu_addr *const ppu_addr = (mapper_ppu_addr *)&addr;
+    cart->VRAM_CE = ppu_addr->A13;
     if (addr >= 0x2000) {
-        const mapper_ppu_addr *const ppu_addr = (mapper_ppu_addr *)&addr;
-        cart->VRAM_CE = 1;  // ~ppu_addr->A13
         cart->VRAM_A10 = (cart->mirror_type == NES_CART_MIRROR_VERTICAL) ? ppu_addr->A10 : ppu_addr->A11;
         return false;
     }

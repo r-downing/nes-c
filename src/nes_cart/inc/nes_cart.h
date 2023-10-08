@@ -42,6 +42,7 @@ typedef struct NesCart {
         // This signal is used as an input to enable the internal 2k of VRAM (used for name table and attribute tables
         // typically, but could be made for another use). This signal is usually directly connected with PPU /A13, but
         // carts using their own RAM for name table and attribute tables will have their own logic implemented.
+        // 1 for enable
         uint8_t VRAM_CE : 1;
 
         // This is the 1k bank selection input for internal VRAM. This is used to control how the name tables are

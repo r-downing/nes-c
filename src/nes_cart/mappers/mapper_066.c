@@ -33,16 +33,7 @@ bool mapper_066_cpu_read(NesCart *const cart, uint16_t addr, uint8_t *const val_
     return true;
 }
 
-bool mapper_066_ppu_write(NesCart *const cart, uint16_t addr, uint8_t val) {
-    if (addr >= 0x2000) {  // route to console vram
-        const mapper_ppu_addr *const ppu_addr = (mapper_ppu_addr *)&addr;
-        cart->VRAM_CE = 1;  // ~ppu_addr->A13
-        cart->VRAM_A10 = (cart->mirror_type == NES_CART_MIRROR_VERTICAL) ? ppu_addr->A10 : ppu_addr->A11;
-        return false;
-    }
-
-    return false;
-}
+bool mapper_000_ppu_write(NesCart *const cart, uint16_t addr, uint8_t val);
 
 bool mapper_066_ppu_read(NesCart *const cart, uint16_t addr, uint8_t *const val_out) {
     if (addr >= 0x2000) {  // route to console vram
@@ -63,6 +54,6 @@ const struct NesCartMapperInterface mapper_066 = {
     .name = "GxROM",
     .cpu_write = mapper_066_cpu_write,
     .cpu_read = mapper_066_cpu_read,
-    .ppu_write = mapper_066_ppu_write,
+    .ppu_write = mapper_000_ppu_write,
     .ppu_read = mapper_066_ppu_read,
 };
