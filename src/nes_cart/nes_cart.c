@@ -9,7 +9,7 @@
 extern const struct NesCartMapperInterface *const mapper_table[];
 extern const size_t mapper_table_size;
 
-void nes_cart_deinit(NesCart *cart) {
+void nes_cart_deinit(NesCart *const cart) {
     const typeof(cart->mapper->deinit) deinit = cart->mapper->deinit;
     if (deinit) {
         deinit(cart);
@@ -18,9 +18,10 @@ void nes_cart_deinit(NesCart *cart) {
     free((void *)cart->prg_rom.buf);
     free(cart->chr_ram.buf);
     free(cart->prg_ram.buf);
+    free(cart->ext_vram);
 }
 
-void nes_cart_reset(NesCart *cart) {
+void nes_cart_reset(NesCart *const cart) {
     const typeof(cart->mapper->reset) reset = cart->mapper->reset;
     if (reset) {
         reset(cart);
@@ -63,7 +64,7 @@ static void _nes_cart_init_from_src(NesCart *const cart, size_t (*read_func)(voi
         read_func(arg, trainer, sizeof(trainer));
     }
     if (header.flags6.four_screen_vram) {
-        assert(0);  // Todo - support 4-scr vram
+        cart->ext_vram = malloc(sizeof(*cart->ext_vram));
     }
 
     cart->prg_rom.banks = header.prg_rom_size_16KB;

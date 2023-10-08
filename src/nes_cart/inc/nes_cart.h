@@ -53,9 +53,11 @@ typedef struct NesCart {
     };
 
     enum {
-        NES_CART_MIRROR_HORIZONTAL = 0,
-        NES_CART_MIRROR_VERTICAL = 1,
+        NES_CART_MIRROR_HORIZONTAL = 0,  // VRAM_A10 connects to PPU_A11
+        NES_CART_MIRROR_VERTICAL = 1,    // VRAM_A10 connects to PPU_A10
     } mirror_type;
+
+    uint8_t (*ext_vram)[0x800];
 
     // https://www.nesdev.org/wiki/Mapper
     const struct NesCartMapperInterface {
