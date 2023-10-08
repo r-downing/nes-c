@@ -65,24 +65,6 @@ static const C6502BusInterface bus_interface = {
 
 // https://www.nesdev.org/wiki/PPU_memory_map
 
-inline static uint8_t *vram_mirroring(NesBus *const bus, uint16_t addr) {
-    const union __attribute__((__packed__)) {
-        uint16_t u16;
-        struct __attribute__((__packed__)) {
-            uint16_t addr : 10;
-            uint16_t v : 1;
-            uint16_t h : 1;
-            uint16_t : 4;
-        };
-    } mirror = {.u16 = addr};
-
-    if (NES_CART_MIRROR_HORIZONTAL == bus->cart.mirror_type) {
-        return &bus->vram[mirror.h][mirror.addr];
-    } else {
-        return &bus->vram[mirror.v][mirror.addr];
-    }
-}
-
 bool nes_bus_ppu_write(NesBus *bus, uint16_t addr, uint8_t val) {
     if (nes_cart_ppu_write(&bus->cart, addr, val)) {
         return true;  // probably CHR-rom or CHR-ram
