@@ -68,7 +68,8 @@
         stdout.textContent += "STDOUT:\n";
         var Module = {
             canvas: document.getElementById('canvas'),
-            print: (str) => { stdout.textContent += str + "\n"; }
+            print: (str) => { stdout.textContent += str + "\n"; },
+            onAbort: (what) => { console.log("abort"); console.log(what) },
         };
 
         chip8_load_rom = (array_buffer) => {
