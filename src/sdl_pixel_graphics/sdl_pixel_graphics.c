@@ -69,35 +69,35 @@ void spg_handle_events(void) {
             const int pressed = (SDL_KEYDOWN == e.type) ? 1 : 0;
             switch (e.key.keysym.sym) {
                 case SDLK_UP: {
-                    bus.gamepad.buttons.Up = pressed;
+                    bus.gamepad[0].buttons.Up = pressed;
                     break;
                 }
                 case SDLK_DOWN: {
-                    bus.gamepad.buttons.Down = pressed;
+                    bus.gamepad[0].buttons.Down = pressed;
                     break;
                 }
                 case SDLK_LEFT: {
-                    bus.gamepad.buttons.Left = pressed;
+                    bus.gamepad[0].buttons.Left = pressed;
                     break;
                 }
                 case SDLK_RIGHT: {
-                    bus.gamepad.buttons.Right = pressed;
+                    bus.gamepad[0].buttons.Right = pressed;
                     break;
                 }
                 case SDLK_a: {
-                    bus.gamepad.buttons.A = pressed;
+                    bus.gamepad[0].buttons.A = pressed;
                     break;
                 }
                 case SDLK_s: {
-                    bus.gamepad.buttons.B = pressed;
+                    bus.gamepad[0].buttons.B = pressed;
                     break;
                 }
                 case SDLK_RETURN: {
-                    bus.gamepad.buttons.Start = pressed;
+                    bus.gamepad[0].buttons.Start = pressed;
                     break;
                 }
                 case SDLK_RSHIFT: {
-                    bus.gamepad.buttons.Select = pressed;
+                    bus.gamepad[0].buttons.Select = pressed;
                     break;
                 }
             }

@@ -16,7 +16,7 @@ typedef struct {
     C6502 cpu;
     C2C02 ppu;
 
-    NesGamepad gamepad;
+    NesGamepad gamepad[2];
 
     int cpu_subcycle_count;
 } NesBus;

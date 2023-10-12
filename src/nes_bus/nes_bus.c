@@ -29,10 +29,10 @@ bool nes_bus_cpu_write(NesBus *bus, uint16_t addr, uint8_t val) {
             bus->cpu.current_op_cycles_remaining += 513 + (bus->cpu.total_cycles & 1);  // cpu skips cycles for DMA
         }
         if (addr == 0x4016) {
-            nes_gamepad_write_reg(&bus->gamepad, val);
-            // Todo - write to second gamepad
+            nes_gamepad_write_reg(&bus->gamepad[0], val);
+            nes_gamepad_write_reg(&bus->gamepad[1], val);
         }
-        return true;  // ToDo: APU and IO
+        return true;  // ToDo: APU
     }
     return false;
 }
@@ -50,10 +50,11 @@ uint8_t nes_bus_cpu_read(NesBus *bus, uint16_t addr) {
     }
     if (addr < 0x4020) {
         if (addr == 0x4016) {
-            return nes_gamepad_read_reg(&bus->gamepad);
+            return nes_gamepad_read_reg(&bus->gamepad[0]);
+        } else if (addr == 0x4017) {
+            return nes_gamepad_read_reg(&bus->gamepad[1]);
         }
-        // Todo - 0x4017 read from second gamepad
-        return 0;  // ToDo: APU and IO
+        return 0;  // ToDo: APU
     }
     return 0;
 }
