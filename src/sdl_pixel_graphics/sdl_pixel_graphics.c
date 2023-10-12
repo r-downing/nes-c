@@ -45,13 +45,14 @@ NesBus bus = {0};
 void spg_init(void) {
     assert(0 == SDL_Init(SDL_INIT_VIDEO));
     // Todo: params
-    s->window = SDL_CreateWindow("WindowTitle", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH * SCALE,
-                                 SCREEN_HEIGHT * SCALE, SDL_WINDOW_SHOWN);
+    s->window = SDL_CreateWindow("WindowTitle", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+                                 ((SCREEN_WIDTH * SCALE) * 8) / 7, SCREEN_HEIGHT * SCALE, SDL_WINDOW_SHOWN);
     assert(s->window);
 
     s->renderer = SDL_CreateRenderer(s->window, -1, SDL_RENDERER_ACCELERATED);
     assert(s->renderer);
-    SDL_RenderSetLogicalSize(s->renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+    // SDL_RenderSetScale(s->renderer, 2, 2);
+    // SDL_RenderSetLogicalSize(s->renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     s->texture = SDL_CreateTexture(s->renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_TARGET, SCREEN_WIDTH,
                                    SCREEN_HEIGHT);
