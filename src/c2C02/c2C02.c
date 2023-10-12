@@ -501,10 +501,13 @@ static void _render_scanlines(C2C02 *const c) {
             const uint8_t b1 = (shifters->attr.hi & mux) ? 1 : 0;
             const uint8_t palette_num = (b1 << 1) | b0;
 
-            palette_idx = (val) ? ((palette_num << 2) | val) : 0;
+            if (c->mask.background_left || (c->dot > 8)) {
+                palette_idx = (val) ? ((palette_num << 2) | val) : 0;
+            }
         }
 
         if (c->mask.show_sprites) {
+            // for each sprite on this scanline
             for (size_t i = 0; i < ARRAY_LEN(c->sprite_reg.shifters); i++) {
                 typeof(&c->sprite_reg.shifters[i]) const shifter = &c->sprite_reg.shifters[i];
                 if (shifter->x != 0) {  // inactive
@@ -519,13 +522,16 @@ static void _render_scanlines(C2C02 *const c) {
                     c->status.sprite_0_hit = 1;  // Todo - technically sprite_0_hit only happens dot >=2
                 }
                 if (val) {
-                    if ((palette_idx == 0) || (attrs.priority == 0)) {
-                        palette_idx = ((attrs.palette + 4) << 2) | val;
+                    if (c->mask.sprites_left || (c->dot > 8)) {
+                        if ((palette_idx == 0) || (attrs.priority == 0)) {
+                            palette_idx = ((attrs.palette + 4) << 2) | val;
+                        }
                     }
                     break;  // https://www.nesdev.org/wiki/PPU_sprite_priority
                 }
             }
 
+            // update sprite shifters
             for (size_t i = 0; i < ARRAY_LEN(c->sprite_reg.shifters); i++) {
                 if (c->sprite_reg.shifters[i].x) {
                     c->sprite_reg.shifters[i].x--;
