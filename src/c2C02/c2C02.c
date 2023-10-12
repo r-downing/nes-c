@@ -29,10 +29,11 @@ inline static uint16_t mirror_palette_ram_addr(uint16_t addr) {
     return addr;
 }
 
-inline static uint8_t bus_read(const C2C02 *const c, const uint16_t addr) {
+inline static uint8_t bus_read(C2C02 *const c, const uint16_t addr) {
     if (addr >= 0x3F00) {
         return c->palette_ram[mirror_palette_ram_addr(addr)];
     }
+    c->addr_out = addr;
     return c->bus->read(c->bus_ctx, addr);
 }
 
@@ -41,6 +42,7 @@ inline static void bus_write(C2C02 *const c, uint16_t addr, uint8_t val) {
         c->palette_ram[mirror_palette_ram_addr(addr)] = val;
         return;
     }
+    c->addr_out = addr;
     c->bus->write(c->bus_ctx, addr, val);
 }
 
@@ -111,6 +113,9 @@ static void write_ppu_addr_reg(C2C02 *const c, const uint8_t val) {
     } else {
         c->temp_vram_address.lo = val;
         c->vram_address = c->temp_vram_address;
+        if (!(c->mask.show_background || c->mask.show_sprites) || c->scanline >= 240) {
+            c->addr_out = c->vram_address.addr;
+        }
     }
     c->address_latch = !c->address_latch;
 }

@@ -47,6 +47,8 @@ typedef struct C2C02 {
     const C2C02BusInterface *bus;
     void *bus_ctx;
 
+    uint16_t addr_out;
+
     void (*draw_pixel)(void *draw_ctx, int x, int y, uint8_t r, uint8_t g, uint8_t b);
     void *draw_ctx;
 

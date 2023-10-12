@@ -10,6 +10,8 @@ typedef struct NesCart {
         void *arg;
     } irq;
 
+    const uint16_t *addr_in;
+
     struct {
         union {
             size_t size;
@@ -58,7 +60,7 @@ typedef struct NesCart {
         NES_CART_MIRROR_VERTICAL = 1,    // VRAM_A10 connects to PPU_A10
     } mirror_type;
 
-    uint8_t (*ext_vram)[0x800];
+    uint8_t (*ext_vram)[0x1000];
 
     // https://www.nesdev.org/wiki/Mapper
     const struct NesCartMapperInterface {
@@ -67,6 +69,7 @@ typedef struct NesCart {
         bool (*cpu_read)(struct NesCart *, uint16_t addr, uint8_t *val_out);
         bool (*ppu_write)(struct NesCart *, uint16_t addr, uint8_t val);
         bool (*ppu_read)(struct NesCart *, uint16_t addr, uint8_t *val_out);
+        void (*cpu_clock)(struct NesCart *);
         void (*init)(struct NesCart *);
         void (*deinit)(struct NesCart *);
         void (*reset)(struct NesCart *);
@@ -95,4 +98,10 @@ static inline bool nes_cart_ppu_write(NesCart *const cart, uint16_t addr, uint8_
 
 static inline bool nes_cart_ppu_read(NesCart *const cart, uint16_t addr, uint8_t *val_out) {
     return cart->mapper->ppu_read(cart, addr, val_out);
+}
+
+static inline void nes_cart_cpu_clock(NesCart *const cart) {
+    if (cart->mapper->cpu_clock) {
+        cart->mapper->cpu_clock(cart);
+    }
 }

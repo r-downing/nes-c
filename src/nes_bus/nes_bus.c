@@ -102,10 +102,12 @@ void nes_bus_init(NesBus *const bus) {
     bus->ppu.nmi.ctx = &bus->cpu;
     bus->cart.irq.callback = (void (*)(void *))c6502_irq;
     bus->cart.irq.arg = &bus->cpu;
+    bus->cart.addr_in = &bus->ppu.addr_out;
     nes_bus_reset(bus);
 }
 
 void nes_bus_cycle(NesBus *const bus) {
+    nes_cart_cpu_clock(&bus->cart);
     c2C02_cycle(&bus->ppu);
 
     if (3 == ++bus->cpu_subcycle_count) {
