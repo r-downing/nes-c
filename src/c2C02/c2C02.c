@@ -48,7 +48,7 @@ uint8_t c2C02_read_reg(C2C02 *const c, const uint8_t addr) {
     // https://www.nesdev.org/wiki/PPU_registers
     switch (addr & 0x7) {
         // case 0x1: mask not readable
-        case 0x2: {  // status
+        case 0x2: {  // https://www.nesdev.org/wiki/PPU_registers#PPUSTATUS
             c->last_status_read_clocks = c->clocks;
             c->open_bus.val = (c->open_bus.val & (~0xE0)) | (c->status.u8 & 0xE0);
             c->open_bus.fresh[0] |= 0xE0;
@@ -58,7 +58,7 @@ uint8_t c2C02_read_reg(C2C02 *const c, const uint8_t addr) {
             return c->open_bus.val;
         }
         // case 0x3: OAM addr not readable
-        case 0x4:
+        case 0x4: {  // https://www.nesdev.org/wiki/PPU_registers#OAMDATA
             // Todo -Reading OAMDATA while the PPU is rendering will expose internal OAM accesses during sprite
             // evaluation and loading; https://www.nesdev.org/wiki/PPU_registers#OAMDATA
 
@@ -66,9 +66,10 @@ uint8_t c2C02_read_reg(C2C02 *const c, const uint8_t addr) {
             c->open_bus.val = c->oam.u8_arr[c->oam.addr] & 0b11100011;
             c->open_bus.fresh[0] = 0xFF;
             return c->open_bus.val;
+        }
         // case 0x5: // scroll not readable
         // case 0x6: // addr not readable
-        case 0x7: {
+        case 0x7: {  // https://www.nesdev.org/wiki/PPU_registers#PPUDATA
             uint8_t ret = c->data_read_buffer;
             c->data_read_buffer = bus_read(c, c->vram_address.addr);
             if (c->vram_address.addr >= 0x3F00) {
@@ -118,22 +119,22 @@ void c2C02_write_reg(C2C02 *const c, const uint8_t addr, const uint8_t val) {
     c->open_bus.val = val;  // https://www.nesdev.org/wiki/Open_bus_behavior#PPU_open_bus
     c->open_bus.fresh[0] = 0xFF;
     switch (addr & 0x7) {
-        case 0x0: {  // control
+        case 0x0: {  // https://www.nesdev.org/wiki/PPU_registers#PPUCTRL
             c->ctrl.u8 = val;
             c->temp_vram_address.nametable_x = c->ctrl.nametable_x;  // Todo - confirm this?
             c->temp_vram_address.nametable_y = c->ctrl.nametable_y;
             // Todo - trigger nmi if enabling during vblank. not sure of exact timing
             break;
         }
-        case 0x1: {
+        case 0x1: {  // https://www.nesdev.org/wiki/PPU_registers#PPUMASK
             c->mask.u8 = val;
             break;
         }
-        case 0x3: {
+        case 0x3: {  // https://www.nesdev.org/wiki/PPU_registers#OAMADDR
             c->oam.addr = val;
             break;
         }
-        case 0x4: {
+        case 0x4: {  // https://www.nesdev.org/wiki/PPU_registers#OAMDATA
             // Todo - perform a glitchy increment of OAMADDR, bumping only the high 6 bits (i.e., it bumps the
             // [n] value in PPU sprite evaluation – it's plausible that it could bump the low bits instead depending on
             // the current status of sprite evaluation). This extends to DMA transfers via OAMDMA, since that uses
@@ -144,15 +145,15 @@ void c2C02_write_reg(C2C02 *const c, const uint8_t addr, const uint8_t val) {
             }
             break;
         }
-        case 0x5: {
+        case 0x5: {  // https://www.nesdev.org/wiki/PPU_registers#PPUSCROLL
             write_scroll_reg(c, val);
             break;
         }
-        case 0x6: {
+        case 0x6: {  // https://www.nesdev.org/wiki/PPU_registers#PPUADDR
             write_ppu_addr_reg(c, val);
             break;
         }
-        case 0x7: {
+        case 0x7: {  // https://www.nesdev.org/wiki/PPU_registers#PPUDATA
             bus_write(c, c->vram_address.addr, val);
             c->vram_address.addr += (c->ctrl.vram_inc ? 32 : 1);
             break;

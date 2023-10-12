@@ -70,7 +70,7 @@ typedef struct C2C02 {
     bool address_latch;
     uint8_t data_read_buffer;
 
-    // https://www.nesdev.org/wiki/PPU_registers
+    // https://www.nesdev.org/wiki/PPU_registers#PPUCTRL
     union __attribute__((__packed__)) {
         uint8_t u8;
         struct __attribute__((__packed__)) {
@@ -89,6 +89,7 @@ typedef struct C2C02 {
         };
     } ctrl;
 
+    // https://www.nesdev.org/wiki/PPU_registers#PPUSTATUS
     union __attribute__((__packed__)) {
         uint8_t u8;
         struct __attribute__((__packed__)) {
@@ -99,6 +100,7 @@ typedef struct C2C02 {
         };
     } status;
 
+    // https://www.nesdev.org/wiki/PPU_registers#PPUMASK
     union __attribute__((__packed__)) {
         uint8_t u8;
         struct __attribute__((__packed__)) {
@@ -144,14 +146,14 @@ typedef struct C2C02 {
     struct {
         union {
             _c2C02_sprite sprites[64];
-            uint8_t u8_arr[0];
+            uint8_t u8_arr[64 * sizeof(_c2C02_sprite)];
         };
         uint8_t addr;
     } oam;
 
     union {
         _c2C02_sprite sprites[8];
-        uint8_t u8_arr[0];
+        uint8_t u8_arr[8 * sizeof(_c2C02_sprite)];
     } oam2;
 
     struct {
