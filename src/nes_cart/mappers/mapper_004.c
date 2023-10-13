@@ -96,6 +96,7 @@ bool mapper_004_cpu_write(NesCart *const cart, const uint16_t addr, uint8_t val)
             break;
         case 0xE000:
             reg->irq.enable = false;
+            cart->irq_out = false;
             break;
         case 0xE001:
             reg->irq.enable = true;
@@ -173,7 +174,7 @@ bool mapper_004_cpu_read(NesCart *const cart, const uint16_t addr, uint8_t *cons
     return true;
 }
 
-static inline void check_irq(const NesCart *const cart, mapper_004_reg *const reg, const uint16_t addr) {
+static inline void check_irq(NesCart *const cart, mapper_004_reg *const reg, const uint16_t addr) {
     const mapper_ppu_addr *const ppu_addr = (mapper_ppu_addr *)&addr;
 
     if ((0 == reg->irq.edge) && ppu_addr->A12) {  // rising
@@ -182,9 +183,12 @@ static inline void check_irq(const NesCart *const cart, mapper_004_reg *const re
         } else {
             reg->irq.counter--;
             if (0 == reg->irq.counter) {
-                if (reg->irq.enable && cart->irq.callback) {
-                    cart->irq.callback(cart->irq.arg);
+                if (reg->irq.enable) {
+                    cart->irq_out = true;
                 }
+                // if (reg->irq.enable && cart->irq.callback) {
+                //     cart->irq.callback(cart->irq.arg);
+                // }
             }
         }
     }

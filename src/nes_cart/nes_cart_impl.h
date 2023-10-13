@@ -61,11 +61,11 @@ typedef union __attribute__((__packed__)) {
 
 static_assert(sizeof(((RawCartridgeHeader *)NULL)->buf) == sizeof(RawCartridgeHeader));
 
-static inline void nes_cart_irq(const NesCart *const cart) {
-    if (cart->irq.callback) {
-        cart->irq.callback(cart->irq.arg);
-    }
-}
+// static inline void nes_cart_irq(const NesCart *const cart) {
+//     if (cart->irq.callback) {
+//         cart->irq.callback(cart->irq.arg);
+//     }
+// }
 
 typedef struct __attribute__((__packed__)) {
     uint16_t : 10;  // 0-9

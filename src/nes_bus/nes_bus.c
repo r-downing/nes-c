@@ -100,8 +100,8 @@ void nes_bus_init(NesBus *const bus) {
     bus->ppu.bus = &ppu_bus_interface;
     bus->ppu.nmi.callback = (void (*)(void *))c6502_nmi;
     bus->ppu.nmi.ctx = &bus->cpu;
-    bus->cart.irq.callback = (void (*)(void *))c6502_irq;
-    bus->cart.irq.arg = &bus->cpu;
+    // bus->cart.irq.callback = (void (*)(void *))c6502_irq;
+    // bus->cart.irq.arg = &bus->cpu;
     bus->cart.addr_in = &bus->ppu.addr_out;
     nes_bus_reset(bus);
 }
@@ -111,6 +111,9 @@ void nes_bus_cycle(NesBus *const bus) {
     c2C02_cycle(&bus->ppu);
 
     if (3 == ++bus->cpu_subcycle_count) {
+        if (bus->cart.irq_out) {
+            c6502_irq(&bus->cpu);
+        }
         bus->cpu_subcycle_count = 0;
         c6502_cycle(&bus->cpu);
     }

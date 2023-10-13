@@ -5,10 +5,11 @@
 #include <stdint.h>
 
 typedef struct NesCart {
-    struct {
-        void (*callback)(void *arg);
-        void *arg;
-    } irq;
+    // struct {
+    //     void (*callback)(void *arg);
+    //     void *arg;
+    // } irq;
+    bool irq_out;
 
     const uint16_t *addr_in;
 
