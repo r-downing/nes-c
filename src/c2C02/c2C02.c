@@ -113,9 +113,9 @@ static void write_ppu_addr_reg(C2C02 *const c, const uint8_t val) {
     } else {
         c->temp_vram_address.lo = val;
         c->vram_address = c->temp_vram_address;
-        if (!(c->mask.show_background || c->mask.show_sprites) || c->scanline >= 240) {
-            c->addr_out = c->vram_address.addr;
-        }
+        // if (!(c->mask.show_background || c->mask.show_sprites) || c->scanline >= 240) {
+        //     c->addr_out = c->vram_address.addr;
+        // }
     }
     c->address_latch = !c->address_latch;
 }
@@ -559,6 +559,9 @@ void c2C02_cycle(C2C02 *const c) {
         _render_scanlines(c);
     } else {  // scanlines 240+ idle, except for setting vblank
         _non_render_scanlines(c);
+    }
+    if (!(c->mask.show_background || c->mask.show_sprites) || c->scanline >= 240) {
+        c->addr_out = c->vram_address.addr;
     }
 
     // progress the scan position

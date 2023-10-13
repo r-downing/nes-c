@@ -199,7 +199,7 @@ bool mapper_004_ppu_write(NesCart *const cart, uint16_t addr, uint8_t val) {
     mapper_004_reg *const reg = (mapper_004_reg *)cart->mapper_data;
     const mapper_ppu_addr *const ppu_addr = (mapper_ppu_addr *)&addr;
 
-    check_irq(cart, reg, addr);
+    // check_irq(cart, reg, addr);
 
     if (addr >= 0x2000) {
         if (cart->ext_vram) {
@@ -220,7 +220,7 @@ bool mapper_004_ppu_read(NesCart *const cart, uint16_t addr, uint8_t *const val_
     mapper_004_reg *const reg = (mapper_004_reg *)cart->mapper_data;
     const mapper_ppu_addr *const ppu_addr = (mapper_ppu_addr *)&addr;
 
-    check_irq(cart, reg, addr);
+    // check_irq(cart, reg, addr);
 
     if (addr >= 0x2000) {
         if (cart->ext_vram) {
