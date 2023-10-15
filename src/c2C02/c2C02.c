@@ -445,44 +445,38 @@ static void _render_scanlines(C2C02 *const c) {
             }
         }
     } else if ((c->dot >= 257) && (c->dot <= 320)) {
-        if ((c->dot & 7) == 1) {  // Todo - split reads up into cycles
+        if (((c->dot & 7) == 6) || ((c->dot & 7) == 0)) {
             const uint8_t oam2_idx = (c->dot - 257) >> 3;
             const _c2C02_sprite *const sprite = &c->oam2.sprites[oam2_idx];
             typeof(&c->sprite_reg.shifters[oam2_idx]) const shifter = &c->sprite_reg.shifters[oam2_idx];
+
+            const uint8_t plane = ((c->dot & 7) == 0) ? 1 : 0;
+            uint8_t *const dest = (plane) ? &shifter->pattern_hi : &shifter->pattern_lo;
 
             shifter->attr = sprite->attributes.u8;
             shifter->x = sprite->x;
 
             if (c->ctrl.sprite_size == 0) {
-                uint8_t fine_y = c->scanline - sprite->y;
-                if (sprite->attributes.flip_vertical) {
-                    fine_y = 7 - fine_y;
-                }
-                shifter->pattern_lo =
-                    bus_read(c, get_pattern_table_address(fine_y, 0, sprite->tile, c->ctrl.sprite_pattern_table));
-                shifter->pattern_hi =
-                    bus_read(c, get_pattern_table_address(fine_y, 1, sprite->tile, c->ctrl.sprite_pattern_table));
+                const uint8_t fine_y =
+                    sprite->attributes.flip_vertical ? (7 - (c->scanline - sprite->y)) : (c->scanline - sprite->y);
+                *dest =
+                    bus_read(c, get_pattern_table_address(fine_y, plane, sprite->tile, c->ctrl.sprite_pattern_table));
             } else {  // 8x16 sprites
-                uint8_t y = c->scanline - sprite->y;
-                if (sprite->attributes.flip_vertical) {
-                    y = 15 - y;
-                }
+                const uint8_t y =
+                    sprite->attributes.flip_vertical ? (15 - (c->scanline - sprite->y)) : (c->scanline - sprite->y);
                 const uint8_t coarse_y = y >> 3;
                 const uint8_t fine_y = y & 7;
 
-                shifter->pattern_lo = bus_read(
-                    c, get_pattern_table_address(fine_y, 0, (sprite->_8x16.tile << 1) | coarse_y, sprite->_8x16.bank));
-                shifter->pattern_hi = bus_read(
-                    c, get_pattern_table_address(fine_y, 1, (sprite->_8x16.tile << 1) | coarse_y, sprite->_8x16.bank));
+                *dest = bus_read(c, get_pattern_table_address(fine_y, plane, (sprite->_8x16.tile << 1) | coarse_y,
+                                                              sprite->_8x16.bank));
             }
 
             if (!sprite->attributes.flip_horizontal) {
-                shifter->pattern_lo = bit_reverse(shifter->pattern_lo);
-                shifter->pattern_hi = bit_reverse(shifter->pattern_hi);
+                *dest = bit_reverse(*dest);
             }
             if (oam2_idx >= c->sprite_reg.n) {
-                shifter->pattern_lo = 0;  // "Unused sprites are loaded with an all-transparent set of values."
-                shifter->pattern_hi = 0;  // https://www.nesdev.org/wiki/PPU_rendering
+                *dest = 0;  // "Unused sprites are loaded with an all-transparent set of values."
+                            // https://www.nesdev.org/wiki/PPU_rendering
             }
         }
     }
