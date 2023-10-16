@@ -398,7 +398,14 @@ static void _render_scanlines(C2C02 *const c) {
     }      // dot 1-256, 321-336
 
     if ((c->dot > 257) && (c->dot < 321)) {
-        // Todo - garbate NT fetches 258+260, ... dot & 7 == 2 or 4, equivalent to NT, AT
+        switch (c->dot & 0x7) {
+            case 2:
+                bus_read(c, 0x2000 | (c->vram_address._u16 & 0xFFF));
+                break;
+            case 4:
+                bus_read(c, get_attribute_table_address(0x2000 | (c->vram_address._u16 & 0xFFF)));
+                break;
+        }
     }
 
     if (c->dot == 256) {
