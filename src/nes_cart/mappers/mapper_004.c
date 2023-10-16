@@ -47,6 +47,7 @@ typedef struct __attribute__((__packed__)) {
         uint8_t reload_value;
         uint8_t counter;
         uint8_t edge;
+        int low_m2_count;
     } irq;
     struct {
         uint8_t vram_mirroring : 1;  // Mirroring ($A000-$BFFE, even) (0: vert; 1: hori). Unused if 4-screen VRAM
@@ -177,21 +178,26 @@ bool mapper_004_cpu_read(NesCart *const cart, const uint16_t addr, uint8_t *cons
 static inline void check_irq(NesCart *const cart, mapper_004_reg *const reg, const uint16_t addr) {
     const mapper_ppu_addr *const ppu_addr = (mapper_ppu_addr *)&addr;
 
-    if ((0 == reg->irq.edge) && ppu_addr->A12) {  // rising
-        if (0 == reg->irq.counter) {
-            reg->irq.counter = reg->irq.reload_value;
-        } else {
-            reg->irq.counter--;
-            if (0 == reg->irq.counter) {
-                if (reg->irq.enable) {
-                    cart->irq_out = true;
+    if (!ppu_addr->A12) {
+        reg->irq.low_m2_count++;
+    } else {
+        if (0 == reg->irq.edge) {  // rising
+            if (reg->irq.low_m2_count > 15) {
+                if (0 == reg->irq.counter) {
+                    reg->irq.counter = reg->irq.reload_value;
+                } else {
+                    reg->irq.counter--;
                 }
-                // if (reg->irq.enable && cart->irq.callback) {
-                //     cart->irq.callback(cart->irq.arg);
-                // }
+                if (0 == reg->irq.counter) {
+                    if (reg->irq.enable) {
+                        cart->irq_out = true;
+                    }
+                }
             }
+            reg->irq.low_m2_count = 0;
         }
     }
+
     reg->irq.edge = ppu_addr->A12;
 }
 

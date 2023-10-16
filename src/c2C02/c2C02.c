@@ -360,7 +360,7 @@ static void _non_render_scanlines(C2C02 *const c) {
 
 static void _render_scanlines(C2C02 *const c) {
     // Todo - skip certain loads and shifts depending on if rendering enabled
-    if ((c->scanline == 0) && (c->dot == 0) && c->mask.show_background && (c->frames & 1)) {
+    if ((c->scanline == 0) && (c->dot == 0) && (c->mask.show_background || c->mask.show_sprites) && (c->frames & 1)) {
         c->dot++;  // skip (0,0) on bg-enabled + odd-frame
     }
 
